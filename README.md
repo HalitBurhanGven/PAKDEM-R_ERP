@@ -141,6 +141,50 @@ Uygulama varsayilan olarak `http://127.0.0.1:8000/` adresinde calisir.
 - Yazdirilabilir fis ve teslim formu sayfalari
 - Profil kesim optimizasyonu araci
 
+## Ekran Goruntuleri
+
+Asagida projenin temel ekranlarindan ornek goruntuler yer almaktadir.
+
+### Satis ve Iade Islem Ekrani
+
+![Satis ve iade islem ekrani](docs/screenshots/01-satis-ve-iade-ekrani.png)
+
+### Son Islemler Paneli
+
+![Son islemler paneli](docs/screenshots/02-son-islemler-paneli.png)
+
+### Islem Detayi
+
+![Islem detayi ekrani](docs/screenshots/03-islem-detayi.png)
+
+### Yazdirilabilir Satis Fisi
+
+![Yazdirilabilir satis fisi](docs/screenshots/04-satis-fisi.png)
+
+### A4 Teslim Formu
+
+![A4 teslim formu](docs/screenshots/05-teslim-formu.png)
+
+### Stok Listesi
+
+![Stok listesi ekrani](docs/screenshots/06-stok-listesi.png)
+
+### Kategori Detayi
+
+![Kategori detayi ekrani](docs/screenshots/07-kategori-detayi.png)
+
+### Raporlar
+
+![Raporlar ekrani](docs/screenshots/08-raporlar.png)
+
+### Profil Kesim Planlama
+
+![Profil kesim planlama ekrani](docs/screenshots/09-profil-kesim-planlama.png)
+
+### Fiyat Listesi Yukleme
+
+![Fiyat listesi yukleme ekrani](docs/screenshots/10-fiyat-listesi-yukleme.png)
+
 ## Gelistirme Notlari
 
 - Varsayilan veritabani `SQLite` olarak ayarlanmistir.
