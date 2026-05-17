@@ -1,0 +1,44 @@
+﻿{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Kategori Bazlı Giriş / Çıkış Grafiği{% endblock %}
+
+{% block content %}
+<h1>Kategori Bazlı Giriş / Çıkış</h1>
+
+<p>Her kategori için toplam giriş ve çıkış miktarları.</p>
+
+{{ labels|json_script:"labels-data" }}
+{{ in_data|json_script:"in-data" }}
+{{ out_data|json_script:"out-data" }}
+
+<div class="form-box">
+    <canvas id="catChart" height="110"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const labels = JSON.parse(document.getElementById("labels-data").textContent);
+  const inData = JSON.parse(document.getElementById("in-data").textContent);
+  const outData = JSON.parse(document.getElementById("out-data").textContent);
+
+  const ctx = document.getElementById("catChart").getContext("2d");
+
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [
+        { label: "Giriş", data: inData },
+        { label: "Çıkış", data: outData }
+      ]
+    },
+    options: {
+      responsive: true,
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+</script>
+
+{% endblock %}
+

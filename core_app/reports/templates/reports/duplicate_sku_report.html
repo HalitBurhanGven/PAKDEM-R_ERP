@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}SKU Çakışmaları{% endblock %}
+
+{% block content %}
+<h1>SKU Çakışmaları</h1>
+
+<div class="form-box">
+    <p>Toplam çakışan SKU sayısı: <strong>{{ duplicate_count }}</strong></p>
+    <p>
+        Birleştirme adayı: <strong>{{ summary.merge_candidates }}</strong> |
+        Grup kullanımı: <strong>{{ summary.group_code_misuse }}</strong> |
+        Manuel inceleme: <strong>{{ summary.manual_review }}</strong>
+    </p>
+    <p>
+        Aynı isim / farklı kimlik: <strong>{{ quality_overview.same_name_conflicts }}</strong>
+    </p>
+    {% if summary.group_code_misuse %}
+    <form method="post" action="{% url 'reports:cleanup_duplicate_sku_report' %}">
+        {% csrf_token %}
+        <button type="submit">Tüm güvenli SKU temizliklerini uygula</button>
+    </form>
+    {% endif %}
+</div>
+
+<form method="get" class="form-box" style="margin-bottom: 16px;">
+    <input type="text" name="q" value="{{ duplicate_filters.q }}" placeholder="Ara (ad / SKU / kategori)">
+    <select name="severity">
+        <option value="">-- öncelik --</option>
+        <option value="medium" {% if duplicate_filters.severity == "medium" %}selected{% endif %}>Orta</option>
+        <option value="high" {% if duplicate_filters.severity == "high" %}selected{% endif %}>Yüksek</option>
+    </select>
+    <select name="issue_code">
+        <option value="">-- sorun sınıfı --</option>
+        <option value="merge_candidates" {% if duplicate_filters.issue_code == "merge_candidates" %}selected{% endif %}>Birleştirme adayı</option>
+        <option value="group_code_misuse" {% if duplicate_filters.issue_code == "group_code_misuse" %}selected{% endif %}>Grup kullanımı</option>
+        <option value="manual_review" {% if duplicate_filters.issue_code == "manual_review" %}selected{% endif %}>Manuel inceleme</option>
+        <option value="same_name_different_identity" {% if duplicate_filters.issue_code == "same_name_different_identity" %}selected{% endif %}>Aynı isim / farklı kimlik</option>
+    </select>
+    <button type="submit" class="btn">Filtrele</button>
+    <a href="{% url 'reports:duplicate_sku_report' %}" class="btn btn-danger" style="text-decoration:none;">Temizle</a>
+</form>
+
+<div class="form-box" style="margin-bottom: 16px;">
+    <p>Filtreli çakışan grup sayısı: <strong>{{ duplicate_filtered_count }}</strong></p>
+    <p>Filtreli aynı isim çatışması sayısı: <strong>{{ same_name_identity.filtered_count|default:same_name_identity.count }}</strong></p>
+</div>
+
+{% if rows %}
+    {% for row in rows %}
+    <div class="form-box" style="margin-bottom: 20px;">
+        <h2 style="margin-top: 0;">{{ row.sku }}</h2>
+        <p>
+            Kayıt sayısı: <strong>{{ row.record_count }}</strong> |
+            Toplam miktar: <strong>{{ row.total_quantity }}</strong>
+        </p>
+        <p>
+            Önerilen aksiyon: <strong>{{ row.strategy.label }}</strong>
+            | Öncelik: <strong>{{ row.strategy.severity_label }}</strong>
+        </p>
+        <p>{{ row.strategy.reason }}</p>
+        <p><strong>Temizlik önerisi:</strong> {{ row.strategy.recommendation }}</p>
+        {% if row.strategy.code == "group_code_misuse" %}
+        <form method="post" action="{% url 'reports:cleanup_duplicate_sku_report' %}" style="margin-bottom: 10px;">
+            {% csrf_token %}
+            <input type="hidden" name="sku" value="{{ row.sku }}">
+            <button type="submit">Bu SKU için temizlik uygula</button>
+        </form>
+        {% endif %}
+        {% if row.record_count == 2 %}
+        <p>
+            <a href="{% url 'reports:stock_merge_assistant' %}?left={{ row.records.0.id }}&right={{ row.records.1.id }}">Birleştirme asistanı</a>
+        </p>
+        {% endif %}
+        <p>
+            Kategoriler:
+            {% if row.categories %}{{ row.categories|join:", " }}{% else %}-{% endif %}
+        </p>
+        <p>
+            Alt gruplar:
+            {% if row.subgroups %}{{ row.subgroups|join:", " }}{% else %}-{% endif %}
+        </p>
+
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left; padding: 8px;">ID</th>
+                    <th style="text-align:left; padding: 8px;">Ürün</th>
+                    <th style="text-align:left; padding: 8px;">Kategori</th>
+                    <th style="text-align:left; padding: 8px;">Alt Grup</th>
+                    <th style="text-align:left; padding: 8px;">Miktar</th>
+                    <th style="text-align:left; padding: 8px;">Birim</th>
+                    <th style="text-align:left; padding: 8px;">Aksiyon</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in row.records %}
+                <tr>
+                    <td style="padding: 8px;">{{ record.id }}</td>
+                    <td style="padding: 8px;">{{ record.name }}</td>
+                    <td style="padding: 8px;">{{ record.category|default:"-" }}</td>
+                    <td style="padding: 8px;">{{ record.subgroup|default:"-" }}</td>
+                    <td style="padding: 8px;">{{ record.quantity }}</td>
+                    <td style="padding: 8px;">{{ record.unit }}</td>
+                    <td style="padding: 8px;">
+                        <a href="{% url 'stock_edit' record.id %}">Düzenle</a>
+                        |
+                        <a href="{% url 'stock_movement' record.id %}">Hareket</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="form-box">
+        <p>Çakışan SKU kaydı bulunmadı.</p>
+    </div>
+{% endif %}
+
+{% if duplicate_page_obj %}
+<div class="form-box" style="margin-bottom: 16px;">
+    <p>Çakışan grup sayfası {{ duplicate_page_obj.number }} / {{ duplicate_page_obj.paginator.num_pages }}</p>
+    {% if duplicate_page_obj.has_previous %}
+        <a href="?{% if duplicate_page_query %}{{ duplicate_page_query }}&{% endif %}dup_page={{ duplicate_page_obj.previous_page_number }}">Önceki</a>
+    {% endif %}
+    {% for page_number in duplicate_page_obj.paginator.page_range %}
+        {% if page_number == duplicate_page_obj.number %}
+            <strong style="margin-left: 8px;">{{ page_number }}</strong>
+        {% else %}
+            <a href="?{% if duplicate_page_query %}{{ duplicate_page_query }}&{% endif %}dup_page={{ page_number }}" style="margin-left: 8px;">{{ page_number }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if duplicate_page_obj.has_next %}
+        <a href="?{% if duplicate_page_query %}{{ duplicate_page_query }}&{% endif %}dup_page={{ duplicate_page_obj.next_page_number }}" style="margin-left: 8px;">Sonraki</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% if same_name_identity.rows %}
+    <div class="form-box">
+        <h2>Aynı İsim / Farklı Kimlik</h2>
+        <p>Bu listede aynı normalize isme sahip ama farklı kimlikle duran stoklar var.</p>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align:left; padding: 8px;">Ürün</th>
+                    <th style="text-align:left; padding: 8px;">Kayıt</th>
+                    <th style="text-align:left; padding: 8px;">Kimlik</th>
+                    <th style="text-align:left; padding: 8px;">Öncelik</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in same_name_identity.rows %}
+                <tr>
+                    <td style="padding: 8px;">{{ row.display_name }}</td>
+                    <td style="padding: 8px;">{{ row.record_count }}</td>
+                    <td style="padding: 8px;">{{ row.identity_count }}</td>
+                    <td style="padding: 8px;">
+                        {{ row.issue.severity_label }}
+                        |
+                        <a href="{% url 'reports:same_name_conflict_detail' %}?name={{ row.normalized_name|urlencode }}">Detay İncele</a>
+                        {% if row.record_count == 2 %}
+                        |
+                        <a href="{% url 'reports:stock_merge_assistant' %}?left={{ row.records.0.id }}&right={{ row.records.1.id }}">Birleştirme asistanı</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="padding: 8px 8px 16px 8px;">
+                        {% for record in row.records %}
+                            <a href="{% url 'stock_edit' record.id %}">{{ record.name }} #{{ record.id }}</a>
+                            {% if record.sku %} | SKU: {{ record.sku }}{% endif %}
+                            {% if record.subgroup %} | Alt Grup: {{ record.subgroup }}{% endif %}
+                            {% if not forloop.last %}<br>{% endif %}
+                        {% endfor %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endif %}
+
+{% if same_name_identity.page_obj %}
+<div class="form-box">
+    <p>Aynı isim sayfası {{ same_name_identity.page_obj.number }} / {{ same_name_identity.page_obj.paginator.num_pages }}</p>
+    {% if same_name_identity.page_obj.has_previous %}
+        <a href="?{% if same_name_page_query %}{{ same_name_page_query }}&{% endif %}same_page={{ same_name_identity.page_obj.previous_page_number }}">Önceki</a>
+    {% endif %}
+    {% for page_number in same_name_identity.page_obj.paginator.page_range %}
+        {% if page_number == same_name_identity.page_obj.number %}
+            <strong style="margin-left: 8px;">{{ page_number }}</strong>
+        {% else %}
+            <a href="?{% if same_name_page_query %}{{ same_name_page_query }}&{% endif %}same_page={{ page_number }}" style="margin-left: 8px;">{{ page_number }}</a>
+        {% endif %}
+    {% endfor %}
+    {% if same_name_identity.page_obj.has_next %}
+        <a href="?{% if same_name_page_query %}{{ same_name_page_query }}&{% endif %}same_page={{ same_name_identity.page_obj.next_page_number }}" style="margin-left: 8px;">Sonraki</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

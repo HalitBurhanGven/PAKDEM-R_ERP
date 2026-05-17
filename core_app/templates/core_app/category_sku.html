@@ -1,0 +1,118 @@
+﻿{% extends "base.html" %}
+{% block title %}Kategori: {{ category }} | SKU{% endblock %}
+
+{% block content %}
+<h1>Kategori: {{ category }} - SKU</h1>
+
+<p>
+  <b>Toplam Ürün:</b> {{ total_stock }} <br>
+  <b>Toplam Miktar:</b> {{ total_quantity }} <br><br>
+
+  <b>Toplam Giriş:</b> {{ total_in }} <br>
+  <b>Toplam Çıkış:</b> {{ total_out }} <br>
+  <b>Net:</b>
+  {% if net > 0 %}
+    <span class="net-positive">{{ net }}</span>
+  {% elif net < 0 %}
+    <span class="net-negative">{{ net }}</span>
+  {% else %}
+    <span>{{ net }}</span>
+  {% endif %}
+</p>
+
+<a href="{% url 'category_detail' category %}" class="btn btn-danger" style="text-decoration:none;">Geri</a>
+
+<hr>
+
+<h2>SKU Özeti</h2>
+<p><b>SKU boş olan ürün sayısı:</b> {{ sku_empty_count }}</p>
+
+<form method="get" style="margin: 10px 0;">
+  <label>SKU seç:</label>
+  <select name="sku">
+    <option value="">-- Hepsi --</option>
+    {% for row in sku_summary %}
+      <option value="{{ row.sku }}" {% if sku_filter == row.sku %}selected{% endif %}>
+        {{ row.sku }} ({{ row.count }})
+      </option>
+    {% endfor %}
+  </select>
+
+  <label style="margin-left:12px;">
+    <input type="checkbox" name="sku_empty" value="1" {% if sku_empty %}checked{% endif %}>
+    SKU boşları göster
+  </label>
+
+  <button class="btn" type="submit" style="text-decoration:none;">Filtrele</button>
+  <a class="btn" href="{% url 'category_sku' category %}" style="text-decoration:none;">Sıfırla</a>
+</form>
+
+<table class="table" style="margin-top: 10px;">
+  <thead>
+    <tr>
+      <th>SKU</th>
+      <th>Adet</th>
+      <th>Alt Grup Dağılımı</th>
+      <th>İşlem</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in sku_summary %}
+      <tr>
+        <td>{{ row.sku }}</td>
+        <td>{{ row.count }}</td>
+        <td>{{ row.subgroups_text }}</td>
+        <td>
+          <a class="btn" style="text-decoration:none;"
+             href="{% url 'category_sku' category %}?sku={{ row.sku|urlencode }}">Bu SKU</a>
+
+          <a class="btn" style="text-decoration:none;"
+             href="{% url 'category_detail' category %}?sku={{ row.sku|urlencode }}">Detay listede gör</a>
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">Bu kategoride SKU yok.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<hr>
+
+{% if sku_filter or sku_empty %}
+  <h2>Filtrelenmiş Ürünler</h2>
+  {% for sg, items in subgroup_groups %}
+    <h3>{{ sg }} ({{ items|length }})</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Ürün</th>
+          <th>Alt Grup</th>
+          <th>Birim</th>
+          <th>SKU</th>
+          <th>Miktar</th>
+          <th>İşlem</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for stock in items %}
+          <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ stock.name }}</td>
+            <td>{{ stock.subgroup|default:"-" }}</td>
+            <td>{{ stock.get_unit_display }}</td>
+            <td>{{ stock.sku|default:"-" }}</td>
+            <td>{{ stock.quantity }}</td>
+            <td>
+              <a href="{% url 'stock_movement' stock.id %}" class="btn" style="text-decoration:none;">Hareket</a>
+              <a href="{% url 'stock_edit' stock.id %}" class="btn" style="text-decoration:none;">Düzenle</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endfor %}
+{% endif %}
+
+{% endblock %}
+

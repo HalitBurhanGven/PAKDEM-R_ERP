@@ -1,0 +1,15 @@
+<header class="print-header">
+    <div class="brand-lockup">
+        {% if show_logo %}
+        <img src="{{ logo_url }}" alt="{{ business_name }} logosu" class="brand-logo">
+        {% endif %}
+        <div>
+            <div class="brand-name">{{ business_name }}</div>
+            <div class="brand-subtitle">Yazdırılabilir İşlem Çıktısı</div>
+        </div>
+    </div>
+    <div class="print-title-block">
+        <h1>{{ print_title }}</h1>
+        <p>{{ transaction.get_operation_type_display }} işlemi için oluşturuldu.</p>
+    </div>
+</header>

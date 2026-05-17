@@ -1,0 +1,73 @@
+﻿
+{% extends "base.html" %}
+
+{% block title %}Fiyat Listeleri{% endblock %}
+
+{% block content %}
+<h1>Fiyat Listeleri</h1>
+
+<div class="form-box" style="display:flex; gap:10px; align-items:center;">
+    <a href="{% url 'import_price_list' %}" class="btn" style="text-decoration:none;">
+        Yeni Liste Yükle
+    </a>
+</div>
+
+<table class="table" style="margin-top: 15px;">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Liste Adı</th>
+            <th>Sheet</th>
+            <th>Tarih</th>
+            <th>Kalem</th>
+            <th>İşlem</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for pl in lists %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ pl.title }}</td>
+            <td>{{ pl.sheet_name }}</td>
+            <td>
+                {% if pl.list_date %}
+                    {{ pl.list_date|date:"d.m.Y" }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+            <td>{{ pl.item_count }}</td>
+            <td>
+                <a href="{% url 'price_list_detail' pl.id %}" class="btn" style="text-decoration:none;">
+                    Aç
+                </a>
+
+                {% if pl.id == active_id %}
+                    <span class="badge">Aktif</span>
+                {% else %}
+                    <a href="{% url 'set_active_price_list' pl.id %}" class="btn" style="text-decoration:none;">
+                        Aktif Yap
+                    </a>
+                {% endif %}
+
+                <form method="post" action="{% url 'price_list_delete' pl.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('Bu fiyat listesini silmek istiyor musun?');">
+                        Sil
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">Henüz fiyat listesi yok.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+<form method="post" action="{% url 'sync_price_list_to_stock' %}" style="margin-bottom:10px;">
+  {% csrf_token %}
+  <button class="btn" type="submit">Aktif Listeyi Stoğa Aktar</button>
+</form>
+
+{% endblock %}
+

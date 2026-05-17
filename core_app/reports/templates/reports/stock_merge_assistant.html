@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Stok Birleştirme Asistanı{% endblock %}
+
+{% block content %}
+<h1>Çakışan Stok Birleştirme Asistanı</h1>
+
+<div class="form-box" style="margin-bottom: 16px;">
+    <p><strong>Uyarı:</strong> Bu işlem geri alınamaz. Hareket kayıtları silinmez; seçilen ana stok kartına taşınır.</p>
+    <p>
+        Birleşecek miktar: <strong>{{ preview.left.quantity }}</strong> + <strong>{{ preview.right.quantity }}</strong>
+        = <strong>{{ preview.merged_quantity }}</strong>
+    </p>
+    {% if active_price_list %}
+    <p>Aktif fiyat listesi: <strong>{{ active_price_list.title }}</strong></p>
+    {% endif %}
+</div>
+
+<form method="post" class="form-box">
+    {% csrf_token %}
+    {{ form.left_id }}
+    {{ form.right_id }}
+    {% if form.non_field_errors %}
+    <div style="color:#b00020; margin-bottom: 12px;">{{ form.non_field_errors }}</div>
+    {% endif %}
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left; padding: 8px;">Alan</th>
+                <th style="text-align:left; padding: 8px;">Sol #{{ preview.left.id }}</th>
+                <th style="text-align:left; padding: 8px;">Sağ #{{ preview.right.id }}</th>
+                <th style="text-align:left; padding: 8px;">Seçim</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="padding: 8px;">Ana Kayıt</td>
+                <td style="padding: 8px;">{{ preview.left.name }}</td>
+                <td style="padding: 8px;">{{ preview.right.name }}</td>
+                <td style="padding: 8px;">{{ form.survivor_side }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Ürün Adı</td>
+                <td style="padding: 8px;">{{ preview.left.name }}</td>
+                <td style="padding: 8px;">{{ preview.right.name }}</td>
+                <td style="padding: 8px;">{{ form.name_source }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">SKU</td>
+                <td style="padding: 8px;">{{ preview.left.sku|default:"-" }}</td>
+                <td style="padding: 8px;">{{ preview.right.sku|default:"-" }}</td>
+                <td style="padding: 8px;">{{ form.sku_source }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Kategori</td>
+                <td style="padding: 8px;">{{ preview.left.category|default:"-" }}</td>
+                <td style="padding: 8px;">{{ preview.right.category|default:"-" }}</td>
+                <td style="padding: 8px;">{{ form.category_source }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Alt Grup</td>
+                <td style="padding: 8px;">{{ preview.left.subgroup|default:"-" }}</td>
+                <td style="padding: 8px;">{{ preview.right.subgroup|default:"-" }}</td>
+                <td style="padding: 8px;">{{ form.subgroup_source }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Birim</td>
+                <td style="padding: 8px;">{{ preview.left.unit }}</td>
+                <td style="padding: 8px;">{{ preview.right.unit }}</td>
+                <td style="padding: 8px;">{{ form.unit_source }}</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Miktar</td>
+                <td style="padding: 8px;">{{ preview.left.quantity }}</td>
+                <td style="padding: 8px;">{{ preview.right.quantity }}</td>
+                <td style="padding: 8px;"><strong>{{ preview.merged_quantity }}</strong> (toplam)</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Son Fiyat</td>
+                <td style="padding: 8px;">{% if preview.left.last_price is not None %}{{ preview.left.last_price|floatformat:2 }}{% else %}-{% endif %}</td>
+                <td style="padding: 8px;">{% if preview.right.last_price is not None %}{{ preview.right.last_price|floatformat:2 }}{% else %}-{% endif %}</td>
+                <td style="padding: 8px;">Bilgi</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px;">Aksiyon</td>
+                <td style="padding: 8px;">
+                    <a href="{% url 'stock_edit' preview.left.id %}">Düzenle</a> |
+                    <a href="{% url 'stock_movement' preview.left.id %}">Hareket</a>
+                </td>
+                <td style="padding: 8px;">
+                    <a href="{% url 'stock_edit' preview.right.id %}">Düzenle</a> |
+                    <a href="{% url 'stock_movement' preview.right.id %}">Hareket</a>
+                </td>
+                <td style="padding: 8px;">Karşılaştırma</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top: 16px;">
+        {{ form.confirm }} {{ form.confirm.label_tag }}
+        {% if form.confirm.errors %}<div style="color:#b00020;">{{ form.confirm.errors }}</div>{% endif %}
+    </div>
+
+    <div style="margin-top: 16px;">
+        <button type="submit" class="btn">Onayla ve Birleştir</button>
+        <a class="btn btn-danger" href="{% url 'reports:duplicate_sku_report' %}">Vazgeç</a>
+    </div>
+</form>
+{% endblock %}

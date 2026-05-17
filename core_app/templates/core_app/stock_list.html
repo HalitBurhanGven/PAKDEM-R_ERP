@@ -1,0 +1,233 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Stok Listesi{% endblock %}
+
+{% block content %}
+<h1>Stok Listesi</h1>
+
+<!-- Aktif fiyat listesi bilgisi -->
+{% if active_price_list %}
+  <div class="form-box" style="margin-bottom:12px;">
+    <b>Fiyat Listesi:</b> {{ active_price_list.title }} |
+    <b>Toplam Stok Değeri:</b> {{ total_stock_value|floatformat:2 }}
+  </div>
+{% else %}
+  <div class="form-box" style="margin-bottom:12px;">
+    <b>Fiyat Listesi:</b> (yok) |
+    <b>Toplam Stok Değeri:</b> -
+  </div>
+{% endif %}
+
+<form method="get" class="search-box">
+    <input type="text" name="q" value="{{ q }}" placeholder="Ürün / Barkod / SKU ara (örn: vida, menteşeler)">
+    <button type="submit" class="btn">Ara</button>
+
+    {% if q or category or unit or sku %}
+        <a href="{% url 'stock_list' %}" class="btn btn-danger" style="text-decoration:none;">Temizle</a>
+    {% endif %}
+</form>
+
+{% if form.errors %}
+<div class="form-error">
+    <strong>Lütfen hataları düzelt:</strong>
+    <ul>
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" class="form-box">
+    {% csrf_token %}
+    <div class="form-row">
+        <div class="form-field">
+            <label>Ürün Adı</label>
+            {{ form.name }}
+        </div>
+
+        <div class="form-field">
+            <label>Kategori</label>
+            {{ form.category }}
+        </div>
+
+        <div class="form-field">
+            <label>Alt Kategori</label>
+            {{ form.subgroup }}
+        </div>
+
+        <div class="form-field">
+            <label>Birim</label>
+            {{ form.unit }}
+        </div>
+
+        <div class="form-field">
+            <label>Barkod / SKU</label>
+            {{ form.sku }}
+        </div>
+
+        <div class="form-field">
+            <label>Miktar</label>
+            {{ form.quantity }}
+        </div>
+
+        <button type="submit" class="btn">Ekle</button>
+    </div>
+</form>
+
+<form method="post" action="{% url 'stock_bulk_delete' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ current_url }}">
+
+    <div style="display:flex; justify-content:flex-end; margin:8px 0 12px 0;">
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('Seçili ürünleri toplu silmek istiyor musun?');">
+            Toplu Sil
+        </button>
+    </div>
+
+{% if stock_groups %}
+    {% for category_group in stock_groups %}
+    <h2 style="margin:20px 0 6px 0;">{{ category_group.label }}</h2>
+    <p style="margin:0 0 12px 0;">
+        <b>{{ category_group.stock_count }} stok kartı</b> |
+        <b>{{ category_group.total_quantity }} toplam miktar</b>
+        <a href="?q={{ q }}&category={{ category_group.label|urlencode }}&unit={{ unit|urlencode }}&sku={{ sku|urlencode }}" class="btn" style="text-decoration:none; margin-left:10px;">
+            Bu Kategoriyi Filtrele
+        </a>
+    </p>
+
+        {% for subgroup_group in category_group.subgroups %}
+        <h3 style="margin:12px 0 8px 0;">
+            {{ subgroup_group.label }} ({{ subgroup_group.stock_count }} stok | {{ subgroup_group.total_quantity }} miktar)
+        </h3>
+
+        <table class="table" style="margin-bottom:18px;">
+            <thead>
+                <tr>
+                    <th>
+                        <input type="checkbox" id="{% if forloop.parentloop %}select-{{ forloop.parentloop.counter }}-{{ forloop.counter }}{% else %}select-{{ forloop.counter }}{% endif %}" class="group-select-toggle">
+                    </th>
+                    <th>#</th>
+                    <th>
+                        <a href="?q={{ q }}&category={{ category }}&unit={{ unit }}&sku={{ sku }}&sort=name&order={% if sort == 'name' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                            Ürün
+                        </a>
+                    </th>
+                    <th>Birim</th>
+                    <th>Barkod / SKU</th>
+                    <th>Son Fiyat</th>
+                    <th>Stok Değeri</th>
+                    <th>
+                        <a href="?q={{ q }}&category={{ category }}&unit={{ unit }}&sku={{ sku }}&sort=quantity&order={% if sort == 'quantity' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                            Miktar
+                        </a>
+                    </th>
+                    <th>
+                        <a href="?q={{ q }}&category={{ category }}&unit={{ unit }}&sku={{ sku }}&sort=created_at&order={% if sort == 'created_at' and order == 'asc' %}desc{% else %}asc{% endif %}">
+                            Eklenme
+                        </a>
+                    </th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for stock in subgroup_group.stocks %}
+                <tr>
+                    <td>
+                        <input type="checkbox" name="stock_ids" value="{{ stock.id }}" class="stock-select">
+                    </td>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ stock.name }}</td>
+                    <td>
+                        <a href="?q={{ q }}&category={{ category|urlencode }}&unit={{ stock.unit|urlencode }}&sku={{ sku|urlencode }}" style="text-decoration:none;">
+                            {{ stock.get_unit_display }}
+                        </a>
+                    </td>
+                    <td>
+                        {% if stock.sku %}
+                            <a href="?q={{ q }}&category={{ category|urlencode }}&unit={{ unit|urlencode }}&sku={{ stock.sku|urlencode }}" style="text-decoration:none;">
+                                {{ stock.sku }}
+                            </a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if stock.last_price is not None %}
+                            {{ stock.last_price|floatformat:2 }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if stock.stock_value is not None %}
+                            {{ stock.stock_value|floatformat:2 }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ stock.quantity }}</td>
+                    <td>{{ stock.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <a href="{% url 'stock_movement' stock.id %}" class="btn" style="text-decoration:none;">Hareket</a>
+                        <a href="{% url 'stock_edit' stock.id %}" class="btn" style="text-decoration:none;">Düzenle</a>
+                        <button type="submit"
+                                class="btn btn-danger"
+                                formaction="{% url 'stock_delete' stock.id %}"
+                                formmethod="post"
+                                onclick="return confirm('Bu stoğu silmek istiyor musun?');">
+                            Sil
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endfor %}
+    <hr style="margin: 18px 0;">
+    {% endfor %}
+{% else %}
+<table class="table">
+    <tbody>
+        <tr>
+            <td>Henüz stok yok.</td>
+        </tr>
+    </tbody>
+</table>
+{% endif %}
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const selectAll = document.getElementById("select-all-stocks");
+    const checkboxes = document.querySelectorAll(".stock-select");
+    const groupToggles = document.querySelectorAll(".group-select-toggle");
+
+    if (selectAll && checkboxes.length) {
+        selectAll.addEventListener("change", function () {
+            checkboxes.forEach(function (checkbox) {
+                checkbox.checked = selectAll.checked;
+            });
+        });
+    }
+
+    groupToggles.forEach(function (toggle) {
+        toggle.addEventListener("change", function () {
+            const table = toggle.closest("table");
+            if (!table) {
+                return;
+            }
+            table.querySelectorAll(".stock-select").forEach(function (checkbox) {
+                checkbox.checked = toggle.checked;
+            });
+        });
+    });
+});
+</script>
+
+{% endblock %}
+

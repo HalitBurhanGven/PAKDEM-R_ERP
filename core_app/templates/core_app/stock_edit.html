@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Stok Düzenle{% endblock %}
+
+{% block content %}
+<h1>Stok Düzenle</h1>
+
+{% if form.errors %}
+<div class="form-error">
+    <strong>Lütfen hataları düzelt:</strong>
+    <ul>
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" class="form-box">
+    {% csrf_token %}
+    <div class="form-row">
+        <div class="form-field">
+            <label>Ürün Adı</label>
+            {{ form.name }}
+        </div>
+
+        <div class="form-field">
+            <label>Kategori</label>
+            {{ form.category }}
+        </div>
+
+        <div class="form-field">
+            <label>Birim</label>
+            {{ form.unit }}
+        </div>
+
+        <div class="form-field">
+            <label>Barkod / SKU</label>
+            {{ form.sku }}
+        </div>
+
+        <div class="form-field">
+            <label>Miktar</label>
+            {{ form.quantity }}
+        </div>
+
+        <button type="submit" class="btn">Kaydet</button>
+        <a href="{% url 'stock_list' %}" class="btn btn-danger" style="text-decoration:none;">İptal</a>
+    </div>
+</form>
+
+{% if merge_audits %}
+<div class="form-box" style="margin-top: 20px;">
+    <h3>Merge Audit Geçmişi</h3>
+    {% for audit in merge_audits %}
+    <div style="margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+        <p>
+            <strong>Tarih:</strong> {{ audit.merged_at|date:"d.m.Y H:i" }}
+            | <strong>Kalan Kayıt:</strong> #{{ audit.surviving_stock_id }}
+            | <strong>Kaldırılan Kayıt:</strong> #{{ audit.removed_stock_id }}
+            | <strong>Birleşen Miktar:</strong> {{ audit.merged_quantity }}
+        </p>
+        <p>
+            <strong>Alan Seçimleri:</strong>
+            Ad={{ audit.field_sources.name_source|default:"-" }},
+            SKU={{ audit.field_sources.sku_source|default:"-" }},
+            Kategori={{ audit.field_sources.category_source|default:"-" }},
+            Alt Grup={{ audit.field_sources.subgroup_source|default:"-" }},
+            Birim={{ audit.field_sources.unit_source|default:"-" }}
+        </p>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

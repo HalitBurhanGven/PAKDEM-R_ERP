@@ -1,0 +1,67 @@
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Django ERP{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'core_app/css/style.css' %}">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f4f6f9;
+        }
+        .navbar {
+            background-color: darkred;
+            color: white;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .navbar a {
+            color: white;
+            margin-right: 15px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .content {
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="navbar">
+    <div>
+        <a href="{% url 'home' %}">ERP Panel</a>
+        <a href="{% url 'stock_list' %}">Stok</a>
+        <a href="#">Cari</a>
+        <a href="#">Fatura</a>
+        <a href="{% url 'category_list' %}">Kategoriler</a>
+        <a href="{% url 'reports:report_home' %}">Rapor</a>
+        <a href="{% url 'price_list_list' %}">Fiyat</a>
+
+    </div>
+    <div>
+        <a href="#">Çıkış</a>
+    </div>
+</div>
+
+
+<div class="content">
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="message message-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+</div>
+
+</body>
+</html>
+
+

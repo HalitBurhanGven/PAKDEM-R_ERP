@@ -1,0 +1,258 @@
+.print-page {
+    margin: 0;
+    background: #eef1f5;
+    color: #18222d;
+}
+
+.print-toolbar {
+    max-width: 960px;
+    margin: 24px auto 0;
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 0 20px;
+}
+
+.print-toolbar .btn.print-secondary {
+    text-decoration: none;
+    background: #e6ecf3;
+    color: #223548;
+}
+
+.print-sheet {
+    max-width: 960px;
+    margin: 24px auto 40px;
+    background: #fff;
+    padding: 32px;
+    box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+    border-radius: 18px;
+}
+
+.receipt-sheet {
+    max-width: 860px;
+}
+
+.a4-sheet {
+    min-height: 1122px;
+}
+
+.print-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #dde5ef;
+    margin-bottom: 20px;
+}
+
+.brand-lockup {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.brand-logo {
+    width: 88px;
+    height: 88px;
+    object-fit: contain;
+    border: 1px solid #d7dee8;
+    border-radius: 16px;
+    background: #fff;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.brand-name {
+    font-size: 24px;
+    font-weight: 800;
+    color: #18354f;
+}
+
+.brand-subtitle {
+    margin-top: 4px;
+    color: #5c6b7b;
+    font-size: 14px;
+}
+
+.print-title-block {
+    text-align: right;
+}
+
+.print-title-block h1 {
+    margin: 0;
+    font-size: 30px;
+    color: #18354f;
+}
+
+.print-title-block p {
+    margin: 8px 0 0;
+    color: #5c6b7b;
+}
+
+.print-card {
+    margin-top: 18px;
+    border: 1px solid #dde5ef;
+    border-radius: 14px;
+    padding: 18px 20px;
+}
+
+.print-grid,
+.delivery-info-grid,
+.print-signature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 28px;
+}
+
+.print-meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 8px 0;
+    border-bottom: 1px solid #edf2f7;
+    font-size: 14px;
+}
+
+.print-meta-row:last-child {
+    border-bottom: none;
+}
+
+.print-meta-row span {
+    color: #5c6b7b;
+}
+
+.print-meta-row strong {
+    text-align: right;
+    color: #18222d;
+}
+
+.print-section-title {
+    margin: 0 0 12px;
+    font-size: 16px;
+    color: #18354f;
+}
+
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.print-table th,
+.print-table td {
+    border-bottom: 1px solid #e8edf3;
+    padding: 10px 8px;
+    text-align: left;
+    font-size: 14px;
+}
+
+.print-table th {
+    background: #f5f8fb;
+    color: #3b4e62;
+}
+
+.totals-card {
+    margin-left: auto;
+    max-width: 360px;
+}
+
+.total-emphasis strong,
+.total-emphasis span {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1f5fd6;
+}
+
+.total-emphasis.return strong,
+.total-emphasis.return span {
+    color: #b85d10;
+}
+
+.return-note-card p,
+.note-card p {
+    margin: 8px 0 0;
+    white-space: pre-wrap;
+    line-height: 1.5;
+}
+
+.signature-box {
+    border: 1px dashed #c8d2de;
+    border-radius: 14px;
+    padding: 20px;
+    min-height: 140px;
+}
+
+.signature-label {
+    font-weight: 700;
+    color: #32465b;
+    margin-bottom: 56px;
+}
+
+.signature-line {
+    border-bottom: 1px solid #7d8b9a;
+    margin-top: 24px;
+}
+
+@media (max-width: 720px) {
+    .print-sheet {
+        margin: 12px;
+        padding: 20px;
+        border-radius: 12px;
+    }
+
+    .print-header,
+    .print-grid,
+    .delivery-info-grid,
+    .print-signature-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .print-title-block {
+        text-align: left;
+    }
+
+    .print-toolbar {
+        padding: 0 12px;
+        justify-content: stretch;
+        flex-wrap: wrap;
+    }
+
+    .print-toolbar .btn,
+    .print-toolbar .print-secondary {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
+    body.print-page {
+        background: #fff;
+    }
+
+    .screen-only {
+        display: none !important;
+    }
+
+    .print-sheet {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+    }
+
+    .print-card {
+        break-inside: avoid;
+    }
+
+    .print-table th {
+        background: #f5f8fb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

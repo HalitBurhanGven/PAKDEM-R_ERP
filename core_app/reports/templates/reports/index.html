@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Raporlar{% endblock %}
+
+{% block content %}
+<h1>Raporlar</h1>
+
+<ul>
+    <li><a href="{% url 'reports:price_match_report' %}">Eksik Fiyat Eşleşmeleri</a></li>
+    <li><a href="{% url 'reports:duplicate_sku_report' %}">SKU Çakışmaları</a></li>
+    <li><a href="{% url 'reports:price_list_compare' %}">Fiyat Listesi Karşılaştırma</a></li>
+</ul>
+{% endblock %}

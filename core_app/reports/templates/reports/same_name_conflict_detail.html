@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Aynı İsim Çatışma Detayı{% endblock %}
+
+{% block content %}
+<h1>Aynı İsim Çatışma Detayı</h1>
+
+<div class="form-box" style="margin-bottom: 20px;">
+    <p>
+        Ürün: <strong>{{ conflict.display_name }}</strong>
+        | Kayıt: <strong>{{ conflict.record_count }}</strong>
+        | Kimlik: <strong>{{ conflict.identity_count }}</strong>
+    </p>
+    <p>
+        Normalize ad: <strong>{{ conflict.normalized_name }}</strong>
+        | Öncelik: <strong>{{ conflict.issue.severity_label }}</strong>
+    </p>
+    {% if conflict.record_count == 2 %}
+    <p>
+        <a href="{% url 'reports:stock_merge_assistant' %}?left={{ conflict.records.0.id }}&right={{ conflict.records.1.id }}">Bu iki kayıt için birleştirme asistanını aç</a>
+    </p>
+    {% endif %}
+    {% if active_price_list %}
+    <p>Aktif fiyat listesi: <strong>{{ active_price_list.title }}</strong></p>
+    {% endif %}
+    <p>
+        <a href="{% url 'reports:duplicate_sku_report' %}">Rapora geri dön</a>
+    </p>
+</div>
+
+<div class="form-box">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left; padding: 8px;">ID</th>
+                <th style="text-align:left; padding: 8px;">Ürün</th>
+                <th style="text-align:left; padding: 8px;">SKU</th>
+                <th style="text-align:left; padding: 8px;">Kategori</th>
+                <th style="text-align:left; padding: 8px;">Alt Grup</th>
+                <th style="text-align:left; padding: 8px;">Miktar</th>
+                <th style="text-align:left; padding: 8px;">Son Fiyat</th>
+                <th style="text-align:left; padding: 8px;">Aksiyon</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in conflict.records %}
+            <tr>
+                <td style="padding: 8px;">{{ record.id }}</td>
+                <td style="padding: 8px;">{{ record.name }}</td>
+                <td style="padding: 8px;">{{ record.sku|default:"-" }}</td>
+                <td style="padding: 8px;">{{ record.category|default:"-" }}</td>
+                <td style="padding: 8px;">{{ record.subgroup|default:"-" }}</td>
+                <td style="padding: 8px;">{{ record.quantity }}</td>
+                <td style="padding: 8px;">
+                    {% if record.last_price is not None %}
+                        {{ record.last_price|floatformat:2 }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td style="padding: 8px;">
+                    <a href="{% url 'stock_edit' record.id %}">Düzenle</a>
+                    |
+                    <a href="{% url 'stock_movement' record.id %}">Hareket</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+<section class="print-card">
+    <table class="print-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Ürün</th>
+                <th>SKU</th>
+                <th>Açıklama</th>
+                <th>Miktar</th>
+                <th>Birim</th>
+                <th>Birim Fiyat</th>
+                <th>Satır Toplamı</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in transaction.lines.all %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ line.stock_name }}</td>
+                <td>{{ line.stock_sku|default:"-" }}</td>
+                <td>{{ line.description|default:"-" }}</td>
+                <td>{{ line.quantity }}</td>
+                <td>{{ line.get_unit_display }}</td>
+                <td>{{ line.unit_price|floatformat:2 }} ₺</td>
+                <td>{{ line.line_total|floatformat:2 }} ₺</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8">Bu işlemde kalem bulunamadı.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</section>

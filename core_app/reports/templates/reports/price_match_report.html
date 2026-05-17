@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Eksik Fiyat Eşleşmeleri{% endblock %}
+
+{% block content %}
+<h1>Eksik Fiyat Eşleşmeleri</h1>
+
+{% if not active_price_list %}
+  <div class="form-box">
+    Aktif fiyat listesi seçilmemiş. Fiyat Listesi sayfasından "Aktif" seç.
+  </div>
+{% else %}
+
+  <div class="form-box" style="margin-bottom:12px;">
+    <b>Aktif Fiyat Listesi:</b> {{ active_price_list.title }}
+  </div>
+
+  <div class="form-box" style="margin-bottom:12px;">
+    <b>Stok:</b> {{ counts_all.stocks_total }} |
+    <b>Fiyat Kalemi:</b> {{ counts_all.priceitems_total }} |
+    <b>Stokta var / fiyat yok:</b> {{ counts_all.stocks_without_price }} |
+    <b>Fiyatta var / stok yok:</b> {{ counts_all.priceitems_without_stock }} |
+    <b>Şüpheliler:</b> {{ counts_all.suspects }}
+  </div>
+
+  <div class="form-box" style="margin-bottom:12px;">
+    <b>Veri Kalitesi Özeti:</b>
+    Çakışan SKU: {{ quality_overview.duplicate_sku_groups }} |
+    Aynı isim / farklı kimlik: {{ quality_overview.same_name_conflicts }} |
+    Manuel inceleme: {{ quality_overview.manual_review }}
+  </div>
+
+  <form method="get" class="form-box" style="margin-bottom:12px;">
+    <input type="hidden" name="tab" value="{{ tab }}">
+    <input type="text" name="q" value="{{ q }}" placeholder="Ara (ad / SKU / grup)" style="width:220px;">
+
+    <select name="category">
+      <option value="">-- kategori --</option>
+      {% for c in categories %}
+        <option value="{{ c }}" {% if c == category %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+
+    <select name="severity">
+      <option value="">-- öncelik --</option>
+      <option value="medium" {% if severity == "medium" %}selected{% endif %}>Orta</option>
+      <option value="high" {% if severity == "high" %}selected{% endif %}>Yüksek</option>
+    </select>
+
+    <select name="issue_code">
+      <option value="">-- sorun sınıfı --</option>
+      <option value="name_only_match" {% if issue_code == "name_only_match" %}selected{% endif %}>Yalnızca ad eşleşmesi</option>
+      <option value="sku_group_conflict" {% if issue_code == "sku_group_conflict" %}selected{% endif %}>SKU/Grup çakışması</option>
+      <option value="stock_without_price" {% if issue_code == "stock_without_price" %}selected{% endif %}>Stokta var / fiyat yok</option>
+      <option value="price_without_stock" {% if issue_code == "price_without_stock" %}selected{% endif %}>Fiyatta var / stok yok</option>
+    </select>
+
+    {% if tab == "suspects" %}
+    <select name="match_type">
+      <option value="">-- eşleşme tipi --</option>
+      <option value="name_only" {% if match_type == "name_only" %}selected{% endif %}>Yalnızca ad eşleşmesi</option>
+      <option value="sku_conflict" {% if match_type == "sku_conflict" %}selected{% endif %}>SKU çakışması</option>
+    </select>
+    {% endif %}
+
+    <label style="margin-left:10px;">
+      <input type="checkbox" name="sku_empty" value="1" {% if sku_empty %}checked{% endif %}>
+      Sadece SKU boş
+    </label>
+    <label style="margin-left:10px;">
+      <input type="checkbox" name="suggested_only" value="1" {% if suggested_only %}checked{% endif %}>
+      Sadece önerisi olanlar
+    </label>
+    <label style="margin-left:10px;">
+      <input type="checkbox" name="multi_only" value="1" {% if multi_only %}checked{% endif %}>
+      Sadece çoklu grup olanlar
+    </label>
+
+    <button class="btn" type="submit" style="margin-left:10px;">Filtrele</button>
+    <a class="btn" href="?tab={{ tab }}" style="margin-left:6px;">Temizle</a>
+  </form>
+
+  <div style="margin-bottom:12px;">
+    <a class="btn" href="{{ tab_urls.suspects }}">
+      Şüpheliler ({{ filtered_counts.suspects }})
+    </a>
+
+    <a class="btn" style="margin-left:6px;" href="{{ tab_urls.stocks_without_price }}">
+      Stok var / Fiyat yok ({{ filtered_counts.stocks_without_price }})
+    </a>
+
+    <a class="btn" style="margin-left:6px;" href="{{ tab_urls.priceitems_without_stock }}">
+      Fiyat var / Stok yok ({{ filtered_counts.priceitems_without_stock }})
+    </a>
+  </div>
+
+  {% if tab == "suspects" %}
+    <h2>Şüpheliler (isim var ama SKU/Grup uyumsuz veya SKU boş)</h2>
+    <div class="form-box" style="margin-bottom:10px;">
+      <b>Şüpheli sayısı (filtreli):</b> {{ filtered_counts.suspects }} <br>
+      <small>
+        Bu listede görünenlerde, stok adı fiyat listesinde var ama SKU/Grup tam eşleşmiyor (veya SKU boş).
+        Çözüm genelde: stok SKU'yu, fiyat listesindeki doğru <b>group</b> ile aynı yapmak.
+      </small>
+    </div>
+
+    <form method="post" action="{% url 'reports:price_match_bulk_sku' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ current_url }}">
+      <div class="form-box" style="margin-bottom:10px;">
+        <b>Toplu SKU düzelt:</b>
+        <select name="group">
+          <option value="">-- grup seç --</option>
+          {% for g in all_groups %}
+            <option value="{{ g }}">{{ g }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn" type="submit" name="mode" value="manual" style="margin-left:8px;">Seçilenleri Güncelle</button>
+        <button class="btn" type="submit" name="mode" value="suggested" style="margin-left:6px;">Önerileni Uygula</button>
+        <label style="margin-left:12px;">
+          <input type="checkbox" name="overwrite" value="1">
+          Dolu SKU'ları da ez
+        </label>
+      </div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>ID</th>
+            <th>Ad</th>
+            <th>Mevcut SKU</th>
+            <th>Olası Gruplar (Fiyat Listesi)</th>
+            <th>Önerilen</th>
+            <th>Sınıf</th>
+            <th>Not</th>
+            <th>Aksiyon</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in suspects %}
+          <tr>
+            <td><input type="checkbox" name="stock_ids" value="{{ r.id }}"></td>
+            <td>{{ r.id }}</td>
+            <td>{{ r.name }}</td>
+            <td>{{ r.sku }}</td>
+            <td>{{ r.possible_groups }}</td>
+            <td>
+              {% if r.suggested_group %}
+                <b>{{ r.suggested_group }}</b>
+                <small style="display:block;">(tek seçenek)</small>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+            <td>{{ r.issue.label }}</td>
+            <td>{{ r.note }}</td>
+            <td>
+              <a href="{% url 'stock_edit' r.id %}">Düzenle</a> |
+              <a href="{% url 'stock_movement' r.id %}">Hareket</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="9">Şüpheli yok</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+  {% endif %}
+
+  {% if tab == "stocks_without_price" %}
+    <h2>Stokta var ama fiyat yok</h2>
+    <div class="form-box" style="margin-bottom:10px;">
+      <b>Satır sayısı (filtreli):</b> {{ filtered_counts.stocks_without_price }}
+    </div>
+    <table class="table">
+      <thead><tr><th>ID</th><th>Ad</th><th>SKU</th><th>Sınıf</th><th>Aksiyon</th></tr></thead>
+      <tbody>
+      {% for r in stocks_without_price %}
+        <tr>
+          <td>{{ r.id }}</td>
+          <td>{{ r.name }}</td>
+          <td>{{ r.sku }}</td>
+          <td>{{ r.issue.label }}</td>
+          <td><a href="{% url 'stock_edit' r.id %}">Düzenle</a> | <a href="{% url 'stock_movement' r.id %}">Hareket</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">Yok</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if tab == "priceitems_without_stock" %}
+    <h2>Fiyat listesinde var ama stokta yok</h2>
+    <div class="form-box" style="margin-bottom:10px;">
+      <b>Satır sayısı (filtreli):</b> {{ filtered_counts.priceitems_without_stock }}
+    </div>
+    <table class="table">
+      <thead><tr><th>ID</th><th>Ad</th><th>Grup</th><th>Fiyat</th><th>Sınıf</th><th>Aksiyon</th></tr></thead>
+      <tbody>
+      {% for r in priceitems_without_stock %}
+        <tr>
+          <td>{{ r.id }}</td>
+          <td>{{ r.name }}</td>
+          <td>{{ r.group }}</td>
+          <td>{{ r.price }}</td>
+          <td>{{ r.issue.label }}</td>
+          <td>
+            <a href="{% url 'reports:create_stock_from_price_match' r.id %}">Stok Kartı Oluştur</a> |
+            <a href="{% url 'price_list_detail' active_price_list.id %}">Liste Detayı</a> |
+            <a href="{% url 'stock_list' %}?q={{ r.name|urlencode }}">Stokta Ara</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6">Yok</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if page_obj %}
+  <div class="form-box" style="margin-top:10px;">
+    <p>Sayfa {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</p>
+    {% if page_obj.has_previous %}
+      <a href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ page_obj.previous_page_number }}">Önceki</a>
+    {% endif %}
+    {% for page_number in page_obj.paginator.page_range %}
+      {% if page_number == page_obj.number %}
+        <strong style="margin-left: 8px;">{{ page_number }}</strong>
+      {% else %}
+        <a href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ page_number }}" style="margin-left: 8px;">{{ page_number }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}
+      <a href="?{% if page_query %}{{ page_query }}&{% endif %}page={{ page_obj.next_page_number }}" style="margin-left:8px;">Sonraki</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+{% endif %}
+{% endblock %}

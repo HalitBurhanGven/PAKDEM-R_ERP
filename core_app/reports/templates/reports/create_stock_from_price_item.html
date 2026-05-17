@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Stok Kartı Oluştur{% endblock %}
+
+{% block content %}
+<h1>Stok Kartı Oluştur</h1>
+
+<div class="form-box" style="margin-bottom:12px;">
+  <p><b>Aktif Fiyat Listesi:</b> {{ active_price_list.title }}</p>
+  <p><b>Fiyat Kalemi:</b> {{ price_item.name }}</p>
+  <p><b>Grup / SKU:</b> {{ price_item.group|default:"-" }}</p>
+  <p><b>Fiyat:</b> {{ price_item.price }}</p>
+</div>
+
+<div class="form-box" style="margin-bottom:12px;">
+  <h3>Varsayılan Taslak</h3>
+  <p><b>Ürün Adı:</b> {{ draft.name|default:"-" }}</p>
+  <p><b>Kategori:</b> {{ draft.category|default:"-" }}</p>
+  <p><b>SKU:</b> {{ draft.sku|default:"-" }}</p>
+  <p><b>Birim:</b> {{ draft.unit }}</p>
+  <p><b>Miktar:</b> {{ draft.quantity }}</p>
+</div>
+
+{% if draft.existing_stock %}
+  {% if duplicate_explanation and not edit_mode %}
+  <div class="form-box">
+    <p>Bu varsayılan kimlikte stok kartı zaten mevcut.</p>
+    <p>{{ duplicate_explanation.duplicate_reason }}</p>
+    <a class="btn" href="{% url 'stock_edit' draft.existing_stock.id %}">Mevcut Stok Kartını Aç</a>
+    <a class="btn" href="{% url 'stock_movement' draft.existing_stock.id %}">Mevcut Stok Hareketleri</a>
+    <a class="btn" href="{% url 'reports:create_stock_from_price_match' price_item.id %}?{{ edit_query }}">Formu Düzenle</a>
+    <a class="btn btn-danger" href="{% url 'reports:price_match_report' %}?tab=priceitems_without_stock">Geri</a>
+  </div>
+  {% else %}
+  <form method="post" class="form-box">
+    {% csrf_token %}
+    <p>Bu işlem yeni bir stok kartı oluşturur. Otomatik merge yapılmaz.</p>
+    <table style="width:100%; border-collapse:collapse;">
+      <tr>
+        <td style="padding:8px 8px 8px 0; width:180px;"><label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.name }}
+          {% if form.name.errors %}<div style="color:#b00020;">{{ form.name.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.sku.id_for_label }}">{{ form.sku.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.sku }}
+          {% if form.sku.errors %}<div style="color:#b00020;">{{ form.sku.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.category }}
+          {% if form.category.errors %}<div style="color:#b00020;">{{ form.category.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.unit.id_for_label }}">{{ form.unit.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.unit }}
+          {% if form.unit.errors %}<div style="color:#b00020;">{{ form.unit.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.quantity.id_for_label }}">{{ form.quantity.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.quantity }}
+          {% if form.quantity.errors %}<div style="color:#b00020;">{{ form.quantity.errors }}</div>{% endif %}
+        </td>
+      </tr>
+    </table>
+    <button type="submit" class="btn">Stok Kartı Oluştur</button>
+    <a class="btn btn-danger" href="{% url 'reports:price_match_report' %}?tab=priceitems_without_stock">Vazgeç</a>
+  </form>
+  {% endif %}
+{% else %}
+  <form method="post" class="form-box">
+    {% csrf_token %}
+    <p>Bu işlem yeni bir stok kartı oluşturur. Otomatik merge yapılmaz.</p>
+    <table style="width:100%; border-collapse:collapse;">
+      <tr>
+        <td style="padding:8px 8px 8px 0; width:180px;"><label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.name }}
+          {% if form.name.errors %}<div style="color:#b00020;">{{ form.name.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.sku.id_for_label }}">{{ form.sku.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.sku }}
+          {% if form.sku.errors %}<div style="color:#b00020;">{{ form.sku.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.category.id_for_label }}">{{ form.category.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.category }}
+          {% if form.category.errors %}<div style="color:#b00020;">{{ form.category.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.unit.id_for_label }}">{{ form.unit.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.unit }}
+          {% if form.unit.errors %}<div style="color:#b00020;">{{ form.unit.errors }}</div>{% endif %}
+        </td>
+      </tr>
+      <tr>
+        <td style="padding:8px 8px 8px 0;"><label for="{{ form.quantity.id_for_label }}">{{ form.quantity.label }}</label></td>
+        <td style="padding:8px 0;">
+          {{ form.quantity }}
+          {% if form.quantity.errors %}<div style="color:#b00020;">{{ form.quantity.errors }}</div>{% endif %}
+        </td>
+      </tr>
+    </table>
+    <button type="submit" class="btn">Stok Kartı Oluştur</button>
+    <a class="btn btn-danger" href="{% url 'reports:price_match_report' %}?tab=priceitems_without_stock">Vazgeç</a>
+  </form>
+{% endif %}
+{% endblock %}

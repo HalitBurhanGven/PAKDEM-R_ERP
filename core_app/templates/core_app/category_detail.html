@@ -1,0 +1,208 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Kategori: {{ category }}{% endblock %}
+
+{% block content %}
+<h1>Kategori: {{ category }}</h1>
+
+<p>
+  <b>Toplam Ürün:</b> {{ total_stock }} <br>
+  <b>Toplam Miktar:</b> {{ total_quantity }} <br><br>
+
+  <b>Toplam Giriş:</b> {{ total_in }} <br>
+  <b>Toplam Çıkış:</b> {{ total_out }} <br>
+  <b>Net:</b>
+  {% if net > 0 %}
+      <span class="net-positive">{{ net }}</span>
+  {% elif net < 0 %}
+      <span class="net-negative">{{ net }}</span>
+  {% else %}
+      <span>{{ net }}</span>
+  {% endif %}
+</p>
+
+<div style="display:flex; gap:10px; align-items:center; margin: 10px 0 15px 0;">
+  <a href="{% url 'category_list' %}" class="btn btn-danger" style="text-decoration:none;">Geri</a>
+
+  <a href="{% url 'category_sku' category %}" class="btn" style="text-decoration:none;">
+    SKU'ya göre gör
+  </a>
+</div>
+
+<hr style="margin: 18px 0;">
+
+<!-- Alt gruba göre görünüm -->
+<h2 style="margin: 10px 0;">Alt Gruba Göre</h2>
+
+<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+  <a class="btn"
+     style="text-decoration:none;"
+     href="{% url 'category_detail' category %}">
+    Hepsi
+  </a>
+
+  {% for sg in subgroup_summary %}
+    <a class="btn"
+       style="text-decoration:none; {% if subgroup_filter == sg.key %}opacity:0.85; border:2px solid #333;{% endif %}"
+       href="{% url 'category_detail' category %}?subgroup={{ sg.key|urlencode }}">
+      {{ sg.label }} ({{ sg.count }})
+    </a>
+  {% endfor %}
+</div>
+
+{% if subgroup_filter %}
+  <div style="margin: 6px 0 14px 0; opacity:.85;">
+    Filtre: <b>
+      {% if subgroup_filter == "__EMPTY__" %}Diğer / Boş{% else %}{{ subgroup_filter }}{% endif %}
+    </b>
+    - <a href="{% url 'category_detail' category %}" style="text-decoration:none;">Temizle</a>
+  </div>
+{% endif %}
+
+<!-- Toplu alt grup atama formu + checkboxlar -->
+<form method="post" action="{% url 'category_bulk_subgroup' category %}" class="form-box" style="margin-bottom:12px;">
+  {% csrf_token %}
+  <input type="hidden" name="next" value="{{ current_url }}">
+
+  <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+    <b>Toplu Alt Grup:</b>
+
+    <select name="subgroup" style="min-width:240px;">
+      <option value="">-- Alt grup seç --</option>
+      <option value="__EMPTY__">Diğer / Boş (temizle)</option>
+      {% for sg in subgroup_choices %}
+        <option value="{{ sg }}">{{ sg }}</option>
+      {% endfor %}
+    </select>
+
+    <input type="text" name="subgroup_new" placeholder="Yeni alt grup (opsiyonel)" style="min-width:240px;">
+
+    <button type="submit" class="btn">Uygula</button>
+
+    <span id="selCount" style="margin-left:8px; opacity:.8;">Seçili: 0</span>
+  </div>
+
+  <div style="margin-top:8px; opacity:.8;">
+    Checkbox ile ürün seç -> alt grup seç/yaz -> Uygula.
+  </div>
+
+  <table class="table" style="margin-top: 15px;">
+    <thead>
+      <tr>
+        <th style="width:34px;"><input type="checkbox" id="chkAll"></th>
+        <th>#</th>
+        <th>Ürün</th>
+        <th>Alt Grup</th>
+        <th>Birim</th>
+        <th>SKU</th>
+        <th>Miktar</th>
+        <th>Eklenme</th>
+        <th>İşlem</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for stock in stocks %}
+        <tr>
+          <td>
+            <input type="checkbox"
+                   class="chkOne"
+                   name="stock_ids"
+                   value="{{ stock.id }}"
+                   data-sku="{{ stock.sku|default:''|escapejs }}">
+          </td>
+
+          <td>{{ forloop.counter }}</td>
+          <td>{{ stock.name }}</td>
+          <td>{{ stock.subgroup|default:"-" }}</td>
+          <td>{{ stock.get_unit_display }}</td>
+
+          <td>
+            {% if stock.sku %}
+              <a href="#"
+                 class="skuPick"
+                 data-sku="{{ stock.sku|escapejs }}"
+                 style="text-decoration:underline; cursor:pointer;">
+                {{ stock.sku }}
+              </a>
+            {% else %}
+              -
+            {% endif %}
+          </td>
+
+          <td>{{ stock.quantity }}</td>
+          <td>{{ stock.created_at|date:"d.m.Y H:i" }}</td>
+          <td>
+            <a href="{% url 'stock_movement' stock.id %}" class="btn" style="text-decoration:none;">Hareket</a>
+            <a href="{% url 'stock_edit' stock.id %}" class="btn" style="text-decoration:none;">Düzenle</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="9">Bu kategoride ürün yok.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</form>
+
+<script>
+(function(){
+  const all = document.getElementById("chkAll");
+  const ones = () => Array.from(document.querySelectorAll(".chkOne"));
+  const selCount = document.getElementById("selCount");
+
+  function refresh(){
+    const c = ones().filter(x => x.checked).length;
+    if (selCount) selCount.textContent = "Seçili: " + c;
+  }
+
+  // Hepsini seç / kaldır
+  if (all){
+    all.addEventListener("change", function(){
+      ones().forEach(x => x.checked = all.checked);
+      refresh();
+    });
+  }
+
+  // Tek tek seçimi takip et
+  document.addEventListener("change", function(e){
+    if (e.target.classList && e.target.classList.contains("chkOne")){
+      refresh();
+    }
+  });
+
+  // SKU'ya tıklayınca aynı SKU'ları seç / tekrar tıklayınca kaldır (toggle)
+  document.addEventListener("click", function(e){
+    const a = e.target.closest(".skuPick");
+    if (!a) return;
+    e.preventDefault();
+
+    const sku = (a.dataset.sku || "").trim();
+    if (!sku) return;
+
+    const matches = ones().filter(cb => ((cb.dataset.sku || "").trim() === sku));
+    if (!matches.length) return;
+
+    const allChecked = matches.every(cb => cb.checked);
+    const targetState = !allChecked;
+
+    const additive = e.shiftKey; // Shift: diğer seçimleri bozma
+
+    ones().forEach(cb => {
+      const cbSku = (cb.dataset.sku || "").trim();
+      if (cbSku === sku) {
+        cb.checked = targetState;
+      } else if (!additive) {
+        cb.checked = false;
+      }
+    });
+
+    refresh();
+  });
+
+  refresh();
+})();
+</script>
+
+{% endblock %}
+
+

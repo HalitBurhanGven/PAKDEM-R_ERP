@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}İşlem Detayı{% endblock %}
+
+{% block content %}
+<div class="form-box" style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+    <div>
+        <h1 style="margin:0 0 8px 0;">İşlem Detayı</h1>
+        <p style="margin:0; color:#5f7083;">
+            {{ transaction.display_number }} | {{ transaction.get_operation_type_display }} | {{ transaction.created_at|date:"d.m.Y H:i" }}
+        </p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <a href="{% url 'operation_print_receipt' transaction.id %}" class="btn" style="text-decoration:none;" target="_blank" rel="noopener">
+            {% if transaction.operation_type == "return" %}İade Fişini Aç{% else %}Satış Fişini Aç{% endif %}
+        </a>
+        <a href="{% url 'operation_print_delivery_form' transaction.id %}" class="btn" style="text-decoration:none; background:#245b47;" target="_blank" rel="noopener">
+            A4 Teslim Formu
+        </a>
+        <a href="{% url 'home' %}" class="btn" style="text-decoration:none;">Ana Ekrana Dön</a>
+    </div>
+</div>
+
+<div class="form-box">
+    <div class="summary-row"><span>İşlem Tipi</span><strong>{{ transaction.get_operation_type_display }}</strong></div>
+    <div class="summary-row"><span>Toplam Kalem</span><strong>{{ transaction.lines.count }}</strong></div>
+    <div class="summary-row"><span>Toplam Adet</span><strong>{{ transaction.total_quantity }}</strong></div>
+    <div class="summary-row"><span>Toplam Tutar</span><strong>{{ transaction.total_amount|floatformat:2 }} ₺</strong></div>
+    {% if transaction.customer_name %}<div class="summary-row"><span>Müşteri Adı</span><strong>{{ transaction.customer_name }}</strong></div>{% endif %}
+    {% if transaction.phone %}<div class="summary-row"><span>Telefon</span><strong>{{ transaction.phone }}</strong></div>{% endif %}
+    {% if transaction.payment_type %}<div class="summary-row"><span>Ödeme Tipi</span><strong>{{ transaction.get_payment_type_display }}</strong></div>{% endif %}
+    {% if transaction.recipient_name %}<div class="summary-row"><span>Teslim Alan</span><strong>{{ transaction.recipient_name }}</strong></div>{% endif %}
+    {% if transaction.vehicle_plate %}<div class="summary-row"><span>Araç / Plaka</span><strong>{{ transaction.vehicle_plate }}</strong></div>{% endif %}
+    <div class="summary-row"><span>Genel Not</span><strong>{% if transaction.note %}{{ transaction.note }}{% else %}-{% endif %}</strong></div>
+</div>
+
+<form method="post" action="{% url 'operation_start_from_receipt' transaction.id %}">
+    {% csrf_token %}
+    <div class="form-box" style="display:flex; gap:10px; flex-wrap:wrap;">
+        <button type="submit" name="action" value="copy_sale" class="btn">Yeni Satış Olarak Kopyala</button>
+        {% if return_status.can_return and not return_status.fully_returned %}
+        <button type="submit" name="action" value="return_all" class="btn" style="background:#b85d10;">Bu Fişten İade Oluştur</button>
+        {% else %}
+        <button type="button" class="btn" style="background:#b7bfc9; cursor:not-allowed;">
+            {% if transaction.operation_type == "return" %}İade fişinden yeniden iade oluşturulamaz{% else %}Bu fişin tam iadesi zaten oluşturulmuş{% endif %}
+        </button>
+        {% endif %}
+        <button type="submit" name="action" value="copy_selected" class="btn">Seçili Satırları Yeni Satışa Aktar</button>
+        {% if return_status.can_return and not return_status.fully_returned %}
+        <button type="submit" name="action" value="return_selected" class="btn btn-danger">Seçilenlerden İade Oluştur</button>
+        {% endif %}
+    </div>
+
+    {% if transaction.operation_type == "sale" %}
+    <div class="form-box" style="margin-top:0;">
+        {% if return_status.fully_returned %}
+        <strong>İade Durumu:</strong> Bu satış fişinin iadesi tamamen oluşturulmuş.
+        {% elif return_status.has_partial_return %}
+        <strong>İade Durumu:</strong> Bu satış fişi için kısmi iade yapılmış, yalnızca kalan miktarlar iade edilebilir.
+        {% else %}
+        <strong>İade Durumu:</strong> Bu fiş henüz iade edilmemiş.
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="form-box">
+        <h3 style="margin-top:0;">Fiş Kalemleri</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="select-all-lines"></th>
+                    <th>#</th>
+                    <th>Ürün</th>
+                    <th>SKU</th>
+                    <th>Kategori</th>
+                    <th>Alt Grup</th>
+                    <th>Açıklama</th>
+                    <th>Miktar</th>
+                    {% if return_status.can_return and not return_status.fully_returned %}
+                    <th>İade Miktarı</th>
+                    {% endif %}
+                    <th>Birim</th>
+                    <th>Birim Fiyat</th>
+                    <th>Satır Toplamı</th>
+                    <th>Stok Bilgisi</th>
+                    {% if return_status.can_return and not return_status.fully_returned %}
+                    <th>Hızlı İade</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in line_rows %}
+                {% with line=row.line %}
+                <tr>
+                    <td><input type="checkbox" name="line_ids" value="{{ line.id }}" class="receipt-line-checkbox"></td>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ line.stock_name }}</td>
+                    <td>{{ line.stock_sku|default:"-" }}</td>
+                    <td>{{ line.stock_category|default:"-" }}</td>
+                    <td>{{ line.stock_subgroup|default:"-" }}</td>
+                    <td>{{ line.description|default:"-" }}</td>
+                    <td>
+                        {{ line.quantity }}
+                        {% if transaction.operation_type == "sale" %}
+                        <div style="font-size:12px; color:#5f7083;">Kalan iade: {{ row.remaining_return_quantity }}</div>
+                        {% endif %}
+                    </td>
+                    {% if return_status.can_return and not return_status.fully_returned %}
+                    <td>
+                        {% if row.remaining_return_quantity > 0 %}
+                        <input type="number" name="return_quantity_{{ line.id }}" value="{{ row.remaining_return_quantity }}" min="1" max="{{ row.remaining_return_quantity }}" step="1" style="width:88px; padding:6px 8px;">
+                        {% else %}
+                        <span style="color:#8a97a5;">0</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    <td>{{ line.get_unit_display }}</td>
+                    <td>{{ line.unit_price|floatformat:2 }} ₺</td>
+                    <td>{{ line.line_total|floatformat:2 }} ₺</td>
+                    <td>
+                        {% if line.stock %}
+                        <div>Stok kartı mevcut</div>
+                        <div style="font-size:12px; color:#5f7083;">Güncel stok: {{ line.stock.quantity }} {{ line.stock.get_unit_display }}</div>
+                        {% else %}
+                        <span style="color:#8a97a5;">Stok kartı bulunamadı</span>
+                        {% endif %}
+                    </td>
+                    {% if return_status.can_return and not return_status.fully_returned %}
+                    <td>
+                        {% if row.remaining_return_quantity > 0 %}
+                        <button
+                            type="submit"
+                            name="action"
+                            value="return_selected"
+                            class="btn btn-danger"
+                            style="white-space:nowrap;"
+                            onclick="document.querySelectorAll('.receipt-line-checkbox').forEach((el)=>{el.checked=false;}); document.querySelector('input[name=&quot;line_ids&quot;][value=&quot;{{ line.id }}&quot;]').checked=true;"
+                        >
+                            İade Et
+                        </button>
+                        {% else %}
+                        <span style="color:#8a97a5;">Tamamlandı</span>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endwith %}
+                {% empty %}
+                <tr>
+                    <td colspan="{% if return_status.can_return and not return_status.fully_returned %}14{% else %}12{% endif %}">Bu işlemde kalem bulunamadı.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const selectAll = document.getElementById("select-all-lines");
+    const checkboxes = document.querySelectorAll(".receipt-line-checkbox");
+    if (!selectAll || !checkboxes.length) {
+        return;
+    }
+
+    selectAll.addEventListener("change", function () {
+        checkboxes.forEach(function (checkbox) {
+            checkbox.checked = selectAll.checked;
+        });
+    });
+});
+</script>
+{% endblock %}

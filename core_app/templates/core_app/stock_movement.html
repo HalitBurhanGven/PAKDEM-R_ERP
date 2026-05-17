@@ -1,0 +1,84 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Stok Hareketi{% endblock %}
+
+{% block content %}
+<h1>Stok Hareketi</h1>
+
+<p>
+    <b>Ürün:</b> {{ stock.name }} <br>
+    <b>Mevcut Stok:</b> {{ stock.quantity }} {{ stock.get_unit_display }}
+</p>
+
+{% if form.errors %}
+<div class="form-error">
+    <strong>Lütfen hataları düzelt:</strong>
+    <ul>
+        {% for field in form %}
+            {% for error in field.errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" class="form-box">
+    {% csrf_token %}
+    <div class="form-row">
+        <div class="form-field">
+            <label>Tür</label>
+            {{ form.movement_type }}
+        </div>
+
+        <div class="form-field">
+            <label>Miktar</label>
+            {{ form.quantity }}
+        </div>
+
+        <div class="form-field">
+            <label>Not</label>
+            {{ form.note }}
+        </div>
+
+        <button type="submit" class="btn">Kaydet</button>
+        <a href="{% url 'stock_list' %}" class="btn btn-danger" style="text-decoration:none;">Geri</a>
+    </div>
+</form>
+
+<h2>Son Hareketler</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tarih</th>
+            <th>Tür</th>
+            <th>Miktar</th>
+            <th>Not</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in movements %}
+        <tr>
+            <td>{{ m.created_at|date:"d.m.Y H:i" }}</td>
+            <td>{{ m.get_movement_type_display }}</td>
+            <td>{{ m.quantity }}</td>
+            <td>{{ m.note }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">Henüz hareket yok.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
+.form-field select,
+.form-field textarea {
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 220px;
+    background: white;
+}
+
+

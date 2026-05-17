@@ -1,0 +1,1749 @@
+{% extends "base.html" %}
+{% block title %}Satış ve İade İşlem Ekranı{% endblock %}
+
+{% block content %}
+<style>
+    .operations-shell {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.8fr);
+        gap: 20px;
+    }
+
+    .operations-main,
+    .operations-sidebar {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-box {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        align-items: start;
+    }
+
+    .hero-box h1 {
+        margin: 0 0 8px 0;
+        font-size: 32px;
+    }
+
+    .hero-meta {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .hero-pill {
+        background: #f5f7fb;
+        border: 1px solid #d8e0ea;
+        border-radius: 999px;
+        padding: 8px 14px;
+        font-weight: 700;
+        color: #2c3e50;
+    }
+
+    .operation-type-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(140px, 180px));
+        gap: 12px;
+    }
+
+    .operation-choice input {
+        display: none;
+    }
+
+    .operation-choice span {
+        display: block;
+        padding: 14px 16px;
+        border-radius: 10px;
+        border: 2px solid #d9e2ec;
+        background: #fff;
+        font-weight: 800;
+        text-align: center;
+        cursor: pointer;
+    }
+
+    .operation-choice input:checked + span {
+        border-color: #1f5fd6;
+        background: #eef4ff;
+        color: #1f5fd6;
+    }
+
+    .operation-choice.return input:checked + span {
+        border-color: #b85d10;
+        background: #fff3e7;
+        color: #a84f0d;
+    }
+
+    .operation-form-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+    }
+
+    .operation-form-table th,
+    .operation-form-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #e8edf3;
+        vertical-align: top;
+    }
+
+    .operation-form-table th {
+        font-size: 13px;
+        color: #4b5d70;
+        background: #f7f9fc;
+    }
+
+    .operation-form-table input[type="text"],
+    .operation-form-table input[type="number"],
+    .operation-form-table select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #d7dee8;
+        border-radius: 8px;
+        box-sizing: border-box;
+        background: #fff;
+    }
+
+    .operation-form-table .row-total {
+        display: inline-block;
+        min-width: 96px;
+        font-weight: 800;
+        color: #2c3e50;
+    }
+
+    .line-warning-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+        min-height: 20px;
+    }
+
+    .line-warning-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .line-warning-chip.warning {
+        background: #fff3cd;
+        color: #8a6200;
+        border: 1px solid #efd388;
+    }
+
+    .line-warning-chip.danger {
+        background: #fdeaea;
+        color: #b63e2e;
+        border: 1px solid #efc5be;
+    }
+
+    .row-remove-btn,
+    .row-add-btn {
+        min-width: 44px;
+    }
+
+    .row-copy-btn,
+    .row-duplicate-btn {
+        min-width: 44px;
+        border-radius: 8px;
+        border: 1px solid #cdd8e6;
+        background: #f5f8fc;
+        color: #26415f;
+        padding: 8px 10px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .row-copy-btn:disabled,
+    .row-duplicate-btn:disabled {
+        cursor: not-allowed;
+        color: #91a0b2;
+        background: #f2f4f7;
+    }
+
+    .toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 14px;
+    }
+
+    .toolbar .btn-primary {
+        background: #1f5fd6;
+    }
+
+    .toolbar .btn-secondary {
+        background: #eef2f7;
+        color: #2c3e50;
+        border: 1px solid #d7dee8;
+    }
+
+    .summary-card h3 {
+        margin-top: 0;
+        margin-bottom: 16px;
+        font-size: 18px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 8px 0;
+        border-bottom: 1px solid #edf1f5;
+    }
+
+    .summary-row strong {
+        color: #10243f;
+    }
+
+    .grand-total {
+        margin-top: 18px;
+        padding-top: 12px;
+        border-top: 2px solid #dce5f0;
+        font-size: 30px;
+        font-weight: 900;
+        color: #1f5fd6;
+        text-align: right;
+    }
+
+    .recent-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .recent-item {
+        padding: 12px 14px;
+        border: 1px solid #e5ebf2;
+        border-radius: 10px;
+        background: #fff;
+        transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+    }
+
+    .recent-item:hover {
+        border-color: #bfd0ea;
+        box-shadow: 0 6px 18px rgba(31, 95, 214, 0.08);
+        transform: translateY(-1px);
+    }
+
+    .recent-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .recent-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-weight: 700;
+    }
+
+    .recent-meta {
+        color: #5e6f82;
+        font-size: 13px;
+        margin-top: 6px;
+    }
+
+    .recent-note {
+        margin-top: 8px;
+        color: #2f4054;
+        font-size: 13px;
+        line-height: 1.45;
+    }
+
+    .recent-actions {
+        margin-top: 10px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .recent-action-group {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .recent-action-btn {
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-weight: 700;
+        border: 1px solid #d7dee8;
+        background: #eef4ff;
+        color: #1f5fd6;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .recent-action-btn.return {
+        background: #fff3e7;
+        border-color: #efcfb1;
+        color: #a84f0d;
+    }
+
+    .recent-action-btn.neutral {
+        background: #f5f7fb;
+        color: #2c3e50;
+    }
+
+    .recent-action-disabled {
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-weight: 700;
+        border: 1px solid #d7dee8;
+        background: #f2f4f7;
+        color: #8a97a5;
+    }
+
+    .recent-delete-btn {
+        background: #fff4f1;
+        color: #b63e2e;
+        border: 1px solid #efc5be;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .recent-delete-btn:hover {
+        background: #ffe8e1;
+    }
+
+    .recent-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+        color: #fff;
+        background: #1f5fd6;
+    }
+
+    .recent-badge.return {
+        background: #b85d10;
+    }
+
+    .draft-list {
+        display: grid;
+        gap: 10px;
+    }
+
+    .draft-item {
+        border: 1px solid #e5ebf2;
+        border-radius: 10px;
+        background: #fff;
+        padding: 12px 14px;
+    }
+
+    .draft-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .draft-code {
+        font-weight: 800;
+        color: #1f5fd6;
+    }
+
+    .draft-meta {
+        font-size: 13px;
+        color: #5e6f82;
+        margin-top: 6px;
+    }
+
+    .draft-actions {
+        margin-top: 10px;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .draft-open-btn,
+    .draft-delete-btn {
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .draft-open-btn {
+        background: #eef4ff;
+        color: #1f5fd6;
+        border: 1px solid #c8d8fb;
+    }
+
+    .draft-delete-btn {
+        background: #fff4f1;
+        color: #b63e2e;
+        border: 1px solid #efc5be;
+    }
+
+    .bulk-entry-box {
+        margin-bottom: 18px;
+        border: 1px solid #dfe7f1;
+        border-radius: 12px;
+        background: #fbfcfe;
+        padding: 16px;
+    }
+
+    .bulk-entry-box.is-disabled {
+        opacity: 0.76;
+    }
+
+    .bulk-entry-mode-hint {
+        margin: 0 0 12px 0;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid #d7dee8;
+        background: #f5f7fb;
+        color: #4b5d70;
+        font-size: 13px;
+    }
+
+    .bulk-entry-mode-hint.is-warning {
+        border-color: #efcfb1;
+        background: #fff3e7;
+        color: #a84f0d;
+    }
+
+    .bulk-entry-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr);
+        gap: 16px;
+    }
+
+    .bulk-entry-box textarea,
+    .bulk-entry-box select {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #d7dee8;
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: #fff;
+    }
+
+    .bulk-entry-toolbar {
+        margin-top: 10px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .bulk-preview-list {
+        display: grid;
+        gap: 10px;
+        max-height: 340px;
+        overflow: auto;
+    }
+
+    .bulk-preview-item {
+        border: 1px solid #dfe7f1;
+        border-radius: 10px;
+        background: #fff;
+        padding: 12px;
+    }
+
+    .bulk-preview-item.unmatched {
+        border-color: #f0b4ac;
+        background: #fff7f5;
+    }
+
+    .bulk-preview-item.suggested {
+        border-color: #ead7a4;
+        background: #fffdf5;
+    }
+
+    .bulk-preview-item.matched {
+        border-color: #c9dfcb;
+        background: #f6fff7;
+    }
+
+    .bulk-preview-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .bulk-status-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .bulk-status-badge.matched {
+        background: #e2f5e4;
+        color: #1b6b2c;
+    }
+
+    .bulk-status-badge.suggested {
+        background: #fff0c2;
+        color: #8d6b00;
+    }
+
+    .bulk-status-badge.unmatched {
+        background: #ffe0db;
+        color: #b63e2e;
+    }
+
+    .bulk-preview-meta {
+        font-size: 13px;
+        color: #5e6f82;
+        margin-top: 6px;
+    }
+
+    .shortcut-help {
+        border: 1px solid #dfe7f1;
+        border-radius: 12px;
+        background: #fbfcfe;
+        padding: 14px 16px;
+    }
+
+    .shortcut-help h3 {
+        margin: 0 0 10px 0;
+    }
+
+    .shortcut-help-grid {
+        display: grid;
+        gap: 8px;
+        font-size: 13px;
+        color: #4b5d70;
+    }
+
+    .shortcut-help-grid strong {
+        color: #10243f;
+    }
+
+    .operation-row.is-active {
+        outline: 2px solid rgba(31, 95, 214, 0.18);
+        outline-offset: -2px;
+        background: #f9fbff;
+    }
+
+    @media (max-width: 1080px) {
+        .operations-shell {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-box {
+            align-items: flex-start;
+        }
+
+        .bulk-entry-grid {
+            grid-template-columns: 1fr;
+        }
+        updateRowRepeatActionState();
+
+    }
+
+    @media (max-width: 720px) {
+        .hero-box {
+            align-items: flex-start;
+        }
+    }
+</style>
+
+{{ stock_catalog|json_script:"stock-catalog-data" }}
+{{ operation_warning_config|json_script:"operation-warning-config" }}
+
+<div class="operations-shell">
+    <div class="operations-main">
+        <div class="form-box hero-box">
+            <div>
+                <h1>Satış ve İade İşlem Ekranı</h1>
+                <p style="margin:0; color:#5f7083;">
+                    Kasiyer ve satış personeli için hızlı çok satırlı işlem ekranı.
+                    Aynı fişte birden fazla ürün ekleyebilir, satış ve iadeyi tek ekrandan yönetebilirsin.
+                </p>
+            </div>
+            <div class="hero-meta">
+                <div class="hero-pill">Tarih: {{ today|date:"d.m.Y" }}</div>
+                <div class="hero-pill">
+                    Aktif Fiyat Listesi:
+                    {% if active_price_list %}{{ active_price_list.title }}{% else %}Yok{% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if operation_form.non_field_errors %}
+        <div class="form-error">
+            <strong>İşlem kaydedilemedi:</strong>
+            <ul>
+                {% for error in operation_form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+<form method="post" class="form-box" id="operation-form">
+            {% csrf_token %}
+            <input type="hidden" name="source_transaction_id" value="{{ source_transaction_id }}">
+            <input type="hidden" name="saved_draft_id" value="{{ saved_draft_id }}">
+
+            <div style="display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; margin-bottom:18px;">
+                <div>
+                    <div style="font-weight:800; margin-bottom:10px;">İşlem Tipi</div>
+                    <div class="operation-type-grid">
+                        <label class="operation-choice sale">
+                            <input type="radio" id="operation-type-sale" name="operation_type" value="sale" {% if operation_form.operation_type.value != "return" %}checked{% endif %}>
+                            <span>Satış</span>
+                        </label>
+                        <label class="operation-choice return">
+                            <input type="radio" id="operation-type-return" name="operation_type" value="return" {% if operation_form.operation_type.value == "return" %}checked{% endif %}>
+                            <span>İade</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div style="min-width:320px; flex:1;">
+                    <label for="{{ operation_form.note.id_for_label }}" style="display:block; font-weight:800; margin-bottom:10px;">
+                        Genel Not
+                    </label>
+                    {{ operation_form.note }}
+                </div>
+            </div>
+
+            <div style="border:1px solid #dfe7f1; border-radius:12px; background:#fbfcfe; padding:16px; margin-bottom:18px;">
+                <div style="font-weight:800; margin-bottom:12px;">Fiş Bilgileri</div>
+                <div style="display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px;">
+                    <div>
+                        <label for="{{ operation_form.customer_name.id_for_label }}" style="display:block; font-weight:700; margin-bottom:6px;">Müşteri / Firma</label>
+                        {{ operation_form.customer_name }}
+                    </div>
+                    <div>
+                        <label for="{{ operation_form.phone.id_for_label }}" style="display:block; font-weight:700; margin-bottom:6px;">Telefon</label>
+                        {{ operation_form.phone }}
+                    </div>
+                    <div>
+                        <label for="{{ operation_form.payment_type.id_for_label }}" style="display:block; font-weight:700; margin-bottom:6px;">Ödeme Tipi</label>
+                        {{ operation_form.payment_type }}
+                    </div>
+                    <div>
+                        <label for="{{ operation_form.recipient_name.id_for_label }}" style="display:block; font-weight:700; margin-bottom:6px;">Teslim Alan</label>
+                        {{ operation_form.recipient_name }}
+                    </div>
+                    <div>
+                        <label for="{{ operation_form.vehicle_plate.id_for_label }}" style="display:block; font-weight:700; margin-bottom:6px;">Araç / Plaka</label>
+                        {{ operation_form.vehicle_plate }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="bulk-entry-box" id="bulk-entry-box">
+                <div class="bulk-entry-grid">
+                    <div>
+                        <div style="font-weight:800; margin-bottom:8px;">Listeye Göre Toplu Giriş</div>
+                        <p style="margin:0 0 10px 0; color:#5f7083;">
+                            Ürün listesini alt alta yapıştır. Sistem ürün adı, miktar, birim ve varsa fiyatı ayırıp önizleyecek.
+                        </p>
+                        <textarea id="bulk-entry-text" rows="7" placeholder="100x200 kum mozaik 12&#10;22lik menteşe 16&#10;G/N Beyaz 2"></textarea>
+                        <div class="bulk-entry-mode-hint" id="bulk-entry-mode-hint">
+                            İlk sürümde toplu giriş satış modunda çalışır. İade için fişten iade veya kısmi iade akışlarını kullan.
+                        </div>
+                        <div class="bulk-entry-toolbar">
+                            <button type="button" class="btn btn-secondary" id="bulk-preview-btn">Listeyi Analiz Et</button>
+                            <button type="button" class="btn btn-primary" id="bulk-apply-btn">Tabloya Aktar</button>
+                            <button type="button" class="btn btn-secondary" id="bulk-clear-btn">Temizle</button>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-weight:800; margin-bottom:8px;">Toplu Giriş Önizleme</div>
+                        <div class="bulk-preview-meta" id="bulk-preview-summary">Henüz analiz yapılmadı.</div>
+                        <div class="bulk-preview-list" id="bulk-preview-list" style="margin-top:10px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="operation-form-table" id="operation-lines-table">
+                    <thead>
+                        <tr>
+                            <th style="width:32%;">Ürün / Stok</th>
+                            <th style="width:20%;">Açıklama / Not</th>
+                            <th style="width:10%;">Miktar</th>
+                            <th style="width:10%;">Birim</th>
+                            <th style="width:12%;">Birim Fiyat</th>
+                            <th style="width:12%;">Satır Toplamı</th>
+                            <th style="width:10%;">Hızlı Tekrar</th>
+                            <th style="width:4%;">Sil</th>
+                        </tr>
+                    </thead>
+                    <tbody id="operation-lines-body">
+                        {% for row in operation_rows %}
+                        <tr class="operation-row">
+                            <td>
+                                <input type="hidden" name="stock_id" value="{{ row.stock_id }}" class="stock-id-input">
+                                <input type="hidden" name="source_line_id" value="{{ row.source_line_id }}" class="source-line-id-input">
+                                <div class="line-warning-list" aria-live="polite"></div>
+                                <input type="text" name="product_label" value="{{ row.product_label }}" class="product-label-input" list="stock-catalog-list" placeholder="Ürün ara ve seç">
+                            </td>
+                            <td>
+                                <input type="text" name="line_description" value="{{ row.description }}" placeholder="Ölçü, renk veya not">
+                            </td>
+                            <td>
+                                <input type="number" name="line_quantity" value="{{ row.quantity }}" min="1" step="1" class="line-quantity-input">
+                            </td>
+                            <td>
+                                <select name="line_unit" class="line-unit-input">
+                                    {% for value, label in unit_choices %}
+                                    <option value="{{ value }}" {% if row.unit == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" name="line_unit_price" value="{{ row.unit_price }}" min="0" step="0.01" class="line-unit-price-input">
+                            </td>
+                            <td><span class="row-total">0,00 ₺</span></td>
+                            <td>
+                                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                    <button type="button" class="row-copy-btn" title="Satırı listenin sonuna kopyala">Kopyala</button>
+                                    <button type="button" class="row-duplicate-btn" title="Satırı hemen altına çoğalt">Altına</button>
+                                </div>
+                            </td>
+                            <td><button type="button" class="btn btn-danger row-remove-btn">X</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <datalist id="stock-catalog-list">
+                {% for stock in stock_catalog %}
+                {% if stock.is_active %}
+                <option value="{{ stock.label }}"></option>
+                {% endif %}
+                {% endfor %}
+            </datalist>
+
+            <div class="toolbar">
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button type="button" class="btn btn-primary row-add-btn" id="add-operation-row">+ Satır Ekle</button>
+                    <button type="button" class="btn btn-secondary" id="clear-operation-rows">Formu Temizle</button>
+                    <button type="submit" class="btn btn-secondary" name="submit_action" value="save_draft">Taslak Kaydet</button>
+                    <button type="submit" class="btn btn-secondary" name="submit_action" value="suspend_draft">Askıya Al</button>
+                </div>
+                <div style="font-weight:700; color:#5c6d80;">
+                    Satır sayısı: <span id="line-count">{{ operation_rows|length }}</span>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="operations-sidebar">
+        <div class="form-box summary-card">
+            <h3>Gün Sonu Mini Panel</h3>
+            <div class="summary-row"><span>Bugün Satış</span><strong>{{ daily_operation_panel.sale_total|floatformat:2 }} ₺</strong></div>
+            <div class="summary-row"><span>Bugün İade</span><strong>{{ daily_operation_panel.return_total|floatformat:2 }} ₺</strong></div>
+            <div class="summary-row"><span>Net Toplam</span><strong>{{ daily_operation_panel.net_total|floatformat:2 }} ₺</strong></div>
+            <div class="summary-row"><span>İşlem Sayısı</span><strong>{{ daily_operation_panel.transaction_count }}</strong></div>
+            <div style="margin-top:16px;">
+                <div style="font-weight:800; margin-bottom:10px;">Bugünün Son İşlemleri</div>
+                <div class="recent-list">
+                    {% for txn in daily_operation_panel.recent_transactions %}
+                    <div class="recent-item" style="padding:10px 12px;">
+                        <div class="recent-top">
+                            <span class="recent-badge {% if txn.operation_type == 'return' %}return{% endif %}">
+                                {{ txn.get_operation_type_display }}
+                            </span>
+                            <strong>{{ txn.total_amount|floatformat:2 }} ₺</strong>
+                        </div>
+                        <div class="recent-meta">
+                            {{ txn.display_number }} | {{ txn.created_at|date:"H:i" }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="recent-item" style="padding:10px 12px;">Bugün tamamlanmış işlem yok.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="form-box summary-card">
+            <h3>İşlem Özeti</h3>
+            <div class="summary-row"><span>Ürün Sayısı</span><strong id="summary-line-count">0</strong></div>
+            <div class="summary-row"><span>Toplam Adet</span><strong id="summary-quantity">0</strong></div>
+            <div class="summary-row"><span>Toplam Tutar</span><strong id="summary-subtotal">0,00 ₺</strong></div>
+            <div class="summary-row"><span>Stok Kartı</span><strong>{{ total_stock }}</strong></div>
+            <div class="summary-row"><span>Toplam Miktar</span><strong>{{ total_quantity }}</strong></div>
+            <div class="grand-total" id="summary-grand-total">0,00 ₺</div>
+            <button type="submit" class="btn" form="operation-form" name="submit_action" value="save_operation" id="submit-operation-btn" style="margin-top:16px; width:100%; background:#1f5fd6;">
+                Satışı Kaydet
+            </button>
+        </div>
+
+        <div class="form-box">
+            <h3 style="margin-top:0;">Bekleyen Fişler</h3>
+            <div class="draft-list">
+                {% for draft in pending_drafts %}
+                <div class="draft-item">
+                    <div class="draft-top">
+                        <span class="draft-code">TASLAK-{{ draft.id|stringformat:"04d" }}</span>
+                        <span class="recent-badge {% if draft.operation_type == 'return' %}return{% endif %}">{{ draft.get_operation_type_display }}</span>
+                    </div>
+                    <div class="draft-meta">{{ draft.updated_at|date:"d.m.Y H:i" }} | {{ draft.rows|length }} kalem | {{ draft.total_quantity }} adet | {{ draft.total_amount|floatformat:2 }} ₺</div>
+                    <div class="recent-note">{{ draft.title }}</div>
+                    <div class="draft-actions">
+                        <form method="post" action="{% url 'operation_draft_open' draft.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="draft-open-btn">Bekleyen Fişi Aç</button>
+                        </form>
+                        <form method="post" action="{% url 'operation_draft_delete' draft.id %}" onsubmit="return confirm('Bu taslağı silmek istiyor musun?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'home' %}">
+                            <button type="submit" class="draft-delete-btn">Sil</button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="draft-item">Bekleyen fiş yok.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="form-box">
+            <h3 style="margin-top:0;">Kullanım Notu</h3>
+            <p style="margin-top:0; color:#5f7083;">
+                Ürünü arayıp seç, miktarı gir, gerekirse fiyatı düzelt. Satış stok düşürür, iade stok artırır.
+            </p>
+            <ul style="padding-left:18px; color:#5f7083;">
+                <li>Birim fiyat aktif fiyat listesinden otomatik gelir.</li>
+                <li>Negatif stok oluşursa işlem kaydedilmez.</li>
+                <li>Satırları aynı fişte tek seferde kaydedebilirsin.</li>
+            </ul>
+        </div>
+
+        <div class="shortcut-help">
+            <h3>Klavye Kısayolları</h3>
+            <div class="shortcut-help-grid">
+                <div><strong>F2</strong> Yeni satış</div>
+                <div><strong>F3</strong> İade modu</div>
+                <div><strong>F4</strong> Ürün ara</div>
+                <div><strong>F5</strong> Kaydet</div>
+                <div><strong>Enter</strong> Sonraki alan</div>
+                <div><strong>Ctrl+Z</strong> Önceki alan</div>
+                <div><strong>Del</strong> Aktif satırı sil</div>
+            </div>
+        </div>
+
+        <div class="form-box">
+            <h3 style="margin-top:0;">Son İşlemler</h3>
+            <div class="recent-list">
+                {% for txn in recent_transactions %}
+                <div class="recent-item">
+                    <a class="recent-link" href="{% url 'operation_detail' txn.id %}">
+                    <div class="recent-top">
+                        <span class="recent-badge {% if txn.operation_type == 'return' %}return{% endif %}">
+                            {{ txn.get_operation_type_display }}
+                        </span>
+                        <strong>{{ txn.total_amount|floatformat:2 }} ₺</strong>
+                    </div>
+                    <div class="recent-meta">
+                        {{ txn.display_number }} | {{ txn.created_at|date:"d.m.Y H:i" }} | {{ txn.lines.count }} kalem | {{ txn.total_quantity }} adet
+                    </div>
+                        {% if txn.detail_text %}
+                        <div class="recent-note">{{ txn.detail_text }}</div>
+                        {% endif %}
+                    </a>
+                    <div class="recent-actions">
+                        <div class="recent-action-group">
+                            <a class="recent-action-btn neutral" href="{% url 'operation_detail' txn.id %}">Detayı Aç</a>
+                            {% if txn.operation_type == 'sale' %}
+                            <form method="post" action="{% url 'operation_start_from_receipt' txn.id %}">
+                                {% csrf_token %}
+                                <button type="submit" name="action" value="copy_sale" class="recent-action-btn">Yeni Satış Olarak Kopyala</button>
+                            </form>
+                            {% if txn.home_return_status.can_return and not txn.home_return_status.fully_returned %}
+                            <form method="post" action="{% url 'operation_start_from_receipt' txn.id %}">
+                                {% csrf_token %}
+                                <button type="submit" name="action" value="return_all" class="recent-action-btn return">Bu Fişten İade Oluştur</button>
+                            </form>
+                            {% else %}
+                            <span class="recent-action-disabled">İade Tamamlandı</span>
+                            {% endif %}
+                            {% endif %}
+                        </div>
+                        <form method="post" action="{% url 'operation_delete' txn.id %}" onsubmit="return confirm('Bu fişi silmek istiyor musun? Stok hareketi güvenli şekilde geri alınacaktır.');">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'home' %}">
+                            <button type="submit" class="recent-delete-btn">Fişi Sil</button>
+                        </form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="recent-item">Henüz işlem yok.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const catalog = JSON.parse(document.getElementById("stock-catalog-data").textContent);
+    const warningConfig = JSON.parse(document.getElementById("operation-warning-config").textContent);
+    const catalogByLabel = new Map(catalog.map((item) => [item.label, item]));
+    const catalogById = new Map(catalog.map((item) => [String(item.id), item]));
+    const body = document.getElementById("operation-lines-body");
+    const addRowButton = document.getElementById("add-operation-row");
+    const clearButton = document.getElementById("clear-operation-rows");
+    const lineCountEl = document.getElementById("line-count");
+    const summaryLineCountEl = document.getElementById("summary-line-count");
+    const summaryQuantityEl = document.getElementById("summary-quantity");
+    const summarySubtotalEl = document.getElementById("summary-subtotal");
+    const summaryGrandTotalEl = document.getElementById("summary-grand-total");
+    const submitButton = document.getElementById("submit-operation-btn");
+    const sourceTransactionInput = document.querySelector('input[name="source_transaction_id"]');
+    const savedDraftInput = document.querySelector('input[name="saved_draft_id"]');
+    const bulkText = document.getElementById("bulk-entry-text");
+    const bulkEntryBox = document.getElementById("bulk-entry-box");
+    const bulkModeHint = document.getElementById("bulk-entry-mode-hint");
+    const bulkPreviewButton = document.getElementById("bulk-preview-btn");
+    const bulkApplyButton = document.getElementById("bulk-apply-btn");
+    const bulkClearButton = document.getElementById("bulk-clear-btn");
+    const bulkPreviewList = document.getElementById("bulk-preview-list");
+    const bulkPreviewSummary = document.getElementById("bulk-preview-summary");
+    const operationForm = document.getElementById("operation-form");
+    const saleModeInput = document.getElementById("operation-type-sale");
+    const returnModeInput = document.getElementById("operation-type-return");
+    const customerNameInput = document.getElementById("id_customer_name");
+    const phoneInput = document.getElementById("id_phone");
+    const noteInput = document.getElementById("id_note");
+    const paymentTypeInput = document.getElementById("id_payment_type");
+    const recipientNameInput = document.getElementById("id_recipient_name");
+    const vehiclePlateInput = document.getElementById("id_vehicle_plate");
+    const criticalStockThreshold = Number(warningConfig.critical_stock_threshold || 3);
+    let bulkPreviewRows = [];
+    let activeRow = null;
+    const operationHistory = [];
+    let isRestoringHistory = false;
+
+    function snapshotOperationState() {
+        return {
+            operationType: document.querySelector('input[name="operation_type"]:checked')?.value || "sale",
+            customerName: customerNameInput ? customerNameInput.value : "",
+            phone: phoneInput ? phoneInput.value : "",
+            note: noteInput ? noteInput.value : "",
+            paymentType: paymentTypeInput ? paymentTypeInput.value : "",
+            recipientName: recipientNameInput ? recipientNameInput.value : "",
+            vehiclePlate: vehiclePlateInput ? vehiclePlateInput.value : "",
+            sourceTransactionId: sourceTransactionInput ? sourceTransactionInput.value : "",
+            savedDraftId: savedDraftInput ? savedDraftInput.value : "",
+            rows: getRows().map((row) => ({
+                stock_id: row.querySelector(".stock-id-input")?.value || "",
+                source_line_id: row.querySelector(".source-line-id-input")?.value || "",
+                product_label: row.querySelector(".product-label-input")?.value || "",
+                description: row.querySelector('input[name="line_description"]')?.value || "",
+                quantity: row.querySelector(".line-quantity-input")?.value || "1",
+                unit: row.querySelector(".line-unit-input")?.value || "adet",
+                unit_price: row.querySelector(".line-unit-price-input")?.value || "0.00",
+            })),
+        };
+    }
+
+    function pushOperationHistory() {
+        if (isRestoringHistory) {
+            return;
+        }
+        operationHistory.push(snapshotOperationState());
+        if (operationHistory.length > 20) {
+            operationHistory.shift();
+        }
+    }
+
+    function restoreOperationState(state) {
+        if (!state) {
+            return;
+        }
+        isRestoringHistory = true;
+        body.innerHTML = "";
+        const rows = state.rows && state.rows.length ? state.rows : [{}];
+        rows.forEach((rowData) => {
+            body.appendChild(createRow(rowData));
+        });
+        operationForm.reset();
+        if (customerNameInput) {
+            customerNameInput.value = state.customerName || "";
+        }
+        if (phoneInput) {
+            phoneInput.value = state.phone || "";
+        }
+        if (noteInput) {
+            noteInput.value = state.note || "";
+        }
+        if (paymentTypeInput) {
+            paymentTypeInput.value = state.paymentType || "";
+        }
+        if (recipientNameInput) {
+            recipientNameInput.value = state.recipientName || "";
+        }
+        if (vehiclePlateInput) {
+            vehiclePlateInput.value = state.vehiclePlate || "";
+        }
+        if (sourceTransactionInput) {
+            sourceTransactionInput.value = state.sourceTransactionId || "";
+        }
+        if (savedDraftInput) {
+            savedDraftInput.value = state.savedDraftId || "";
+        }
+        if (state.operationType === "return" && returnModeInput) {
+            returnModeInput.checked = true;
+        } else if (saleModeInput) {
+            saleModeInput.checked = true;
+        }
+        updateOperationMode();
+        recalcSummary();
+        const firstRow = getRows()[0];
+        if (firstRow) {
+            setActiveRow(firstRow);
+        }
+        isRestoringHistory = false;
+    }
+
+    function undoLastOperationAction() {
+        const previousState = operationHistory.pop();
+        if (!previousState) {
+            return;
+        }
+        restoreOperationState(previousState);
+    }
+
+    function setActiveRow(row) {
+        if (activeRow && activeRow !== row) {
+            activeRow.classList.remove("is-active");
+        }
+        activeRow = row;
+        if (activeRow) {
+            activeRow.classList.add("is-active");
+        }
+    }
+
+    function getRows() {
+        return Array.from(body.querySelectorAll(".operation-row"));
+    }
+
+    function isReturnModeSelected() {
+        const selected = document.querySelector('input[name="operation_type"]:checked');
+        return Boolean(selected && selected.value === "return");
+    }
+
+    function getSelectedOperationType() {
+        return isReturnModeSelected() ? "return" : "sale";
+    }
+
+    function getStockForRow(row) {
+        const stockId = row.querySelector(".stock-id-input")?.value || "";
+        if (stockId && catalogById.has(String(stockId))) {
+            return catalogById.get(String(stockId));
+        }
+        const productLabel = row.querySelector(".product-label-input")?.value || "";
+        return catalogByLabel.get(productLabel) || null;
+    }
+
+    function renderRowWarnings(row) {
+        const warningList = row.querySelector(".line-warning-list");
+        if (!warningList) {
+            return;
+        }
+
+        warningList.innerHTML = "";
+        const stock = getStockForRow(row);
+        if (!stock) {
+            return;
+        }
+
+        const warnings = [];
+        const quantity = Number(row.querySelector(".line-quantity-input")?.value || 0);
+        const selectedUnit = row.querySelector(".line-unit-input")?.value || "adet";
+
+        if (!stock.is_active) {
+            warnings.push({ level: "danger", message: "Seçilen ürün pasif durumda" });
+        }
+
+        if (!stock.has_price) {
+            warnings.push({ level: "warning", message: "Aktif fiyat listesinde fiyat bulunamadı" });
+        }
+
+        if (selectedUnit && stock.unit && selectedUnit !== stock.unit) {
+            warnings.push({ level: "warning", message: `Ürün birimi ${stock.unit}, satır birimi ${selectedUnit}` });
+        }
+
+        if (getSelectedOperationType() === "sale") {
+            if (quantity > Number(stock.quantity || 0)) {
+                warnings.push({
+                    level: "danger",
+                    message: `Stok yetersiz: mevcut ${stock.quantity}, istenen ${quantity}`,
+                });
+            } else {
+                const remaining = Number(stock.quantity || 0) - quantity;
+                if (quantity > 0 && remaining <= criticalStockThreshold) {
+                    warnings.push({
+                        level: "warning",
+                        message: `Bu satış sonrası kalan stok kritik seviyeye düşecek: ${remaining}`,
+                    });
+                }
+            }
+        }
+
+        warnings.forEach((warning) => {
+            const chip = document.createElement("span");
+            chip.className = `line-warning-chip ${warning.level}`;
+            chip.textContent = warning.message;
+            warningList.appendChild(chip);
+        });
+    }
+
+    function isFormDirty() {
+        return getRows().some((row) => {
+            const stockId = row.querySelector(".stock-id-input")?.value;
+            const productLabel = row.querySelector(".product-label-input")?.value;
+            const description = row.querySelector('input[name="line_description"]')?.value;
+            const quantity = row.querySelector(".line-quantity-input")?.value;
+            const unitPrice = row.querySelector(".line-unit-price-input")?.value;
+            return Boolean(stockId || productLabel || description || (quantity && quantity !== "1") || (unitPrice && unitPrice !== "0.00"));
+        }) ||
+            Boolean(customerNameInput && customerNameInput.value.trim()) ||
+            Boolean(phoneInput && phoneInput.value.trim()) ||
+            Boolean(noteInput && noteInput.value.trim()) ||
+            Boolean(paymentTypeInput && paymentTypeInput.value) ||
+            Boolean(recipientNameInput && recipientNameInput.value.trim()) ||
+            Boolean(vehiclePlateInput && vehiclePlateInput.value.trim()) ||
+            Boolean(sourceTransactionInput && sourceTransactionInput.value) ||
+            Boolean(savedDraftInput && savedDraftInput.value);
+    }
+
+    function ensureRowForProductFocus() {
+        const rows = getRows();
+        const lastRow = rows[rows.length - 1];
+        if (!lastRow) {
+            const newRow = createRow({});
+            body.appendChild(newRow);
+            return newRow;
+        }
+
+        const productInput = lastRow.querySelector(".product-label-input");
+        const stockIdInput = lastRow.querySelector(".stock-id-input");
+        if ((productInput && productInput.value.trim()) || (stockIdInput && stockIdInput.value.trim())) {
+            const newRow = createRow({});
+            body.appendChild(newRow);
+            return newRow;
+        }
+        return lastRow;
+    }
+
+    function focusFirstProductInput() {
+        const row = ensureRowForProductFocus();
+        const productInput = row.querySelector(".product-label-input");
+        setActiveRow(row);
+        if (productInput) {
+            productInput.focus();
+            productInput.select();
+        }
+    }
+
+    function clearOperationForm() {
+        pushOperationHistory();
+        body.innerHTML = "";
+        body.appendChild(createRow({}));
+        operationForm.reset();
+        if (sourceTransactionInput) {
+            sourceTransactionInput.value = "";
+        }
+        if (savedDraftInput) {
+            savedDraftInput.value = "";
+        }
+        if (customerNameInput) {
+            customerNameInput.value = "";
+        }
+        if (phoneInput) {
+            phoneInput.value = "";
+        }
+        if (noteInput) {
+            noteInput.value = "";
+        }
+        if (paymentTypeInput) {
+            paymentTypeInput.value = "";
+        }
+        if (recipientNameInput) {
+            recipientNameInput.value = "";
+        }
+        if (vehiclePlateInput) {
+            vehiclePlateInput.value = "";
+        }
+        if (saleModeInput) {
+            saleModeInput.checked = true;
+        }
+        updateOperationMode();
+        recalcSummary();
+        focusFirstProductInput();
+    }
+
+    function removeActiveRow() {
+        if (!activeRow) {
+            return;
+        }
+        const removeButton = activeRow.querySelector(".row-remove-btn");
+        if (removeButton) {
+            removeButton.click();
+        }
+    }
+
+    function focusNextField(currentField) {
+        const row = currentField.closest(".operation-row");
+        if (!row) {
+            return;
+        }
+
+        const fields = Array.from(row.querySelectorAll('.product-label-input, input[name="line_description"], .line-quantity-input, .line-unit-input, .line-unit-price-input'));
+        const currentIndex = fields.indexOf(currentField);
+        if (currentIndex === -1) {
+            return;
+        }
+
+        const nextField = fields[currentIndex + 1];
+        if (nextField) {
+            nextField.focus();
+            if (typeof nextField.select === "function") {
+                nextField.select();
+            }
+            return;
+        }
+
+        const rows = getRows();
+        const rowIndex = rows.indexOf(row);
+        const existingNextRow = rows[rowIndex + 1];
+        const nextRow = existingNextRow || createRow({});
+        if (!existingNextRow) {
+            body.appendChild(nextRow);
+        }
+        setActiveRow(nextRow);
+        const nextProductInput = nextRow.querySelector(".product-label-input");
+        if (nextProductInput) {
+            nextProductInput.focus();
+            nextProductInput.select();
+        }
+    }
+
+    function buildRowPayloadFromRow(row) {
+        return {
+            stock_id: row.querySelector(".stock-id-input")?.value || "",
+            source_line_id: "",
+            product_label: row.querySelector(".product-label-input")?.value || "",
+            description: row.querySelector('input[name="line_description"]')?.value || "",
+            quantity: row.querySelector(".line-quantity-input")?.value || "1",
+            unit: row.querySelector(".line-unit-input")?.value || "adet",
+            unit_price: row.querySelector(".line-unit-price-input")?.value || "0.00",
+        };
+    }
+
+    function cloneRow(row, insertBelow = false) {
+        const selected = document.querySelector('input[name="operation_type"]:checked');
+        if (selected && selected.value === "return") {
+            return;
+        }
+
+        pushOperationHistory();
+        const clonedRow = createRow(buildRowPayloadFromRow(row));
+        if (insertBelow && row.parentNode) {
+            row.insertAdjacentElement("afterend", clonedRow);
+        } else {
+            body.appendChild(clonedRow);
+        }
+        setActiveRow(clonedRow);
+        const quantityInput = clonedRow.querySelector(".line-quantity-input");
+        if (quantityInput) {
+            quantityInput.focus();
+            quantityInput.select();
+        }
+        recalcSummary();
+    }
+
+    function formatMoney(value) {
+        return new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value) + " ₺";
+    }
+
+    function getCsrfToken() {
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        return input ? input.value : "";
+    }
+
+    function createRow(data) {
+        const row = document.createElement("tr");
+        row.className = "operation-row";
+        row.innerHTML = `
+            <td>
+                <input type="hidden" name="stock_id" value="${data.stock_id || ""}" class="stock-id-input">
+                <input type="hidden" name="source_line_id" value="${data.source_line_id || ""}" class="source-line-id-input">
+                <div class="line-warning-list" aria-live="polite"></div>
+                <input type="text" name="product_label" value="${data.product_label || ""}" class="product-label-input" list="stock-catalog-list" placeholder="Ürün ara ve seç">
+            </td>
+            <td><input type="text" name="line_description" value="${data.description || ""}" placeholder="Ölçü, renk veya not"></td>
+            <td><input type="number" name="line_quantity" value="${data.quantity || "1"}" min="1" step="1" class="line-quantity-input"></td>
+            <td>
+                <select name="line_unit" class="line-unit-input">
+                    {% for value, label in unit_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td><input type="number" name="line_unit_price" value="${data.unit_price || "0.00"}" min="0" step="0.01" class="line-unit-price-input"></td>
+            <td><span class="row-total">0,00 ₺</span></td>
+            <td>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" class="row-copy-btn" title="Satırı listenin sonuna kopyala">Kopyala</button>
+                    <button type="button" class="row-duplicate-btn" title="Satırı hemen altına çoğalt">Altına</button>
+                </div>
+            </td>
+            <td><button type="button" class="btn btn-danger row-remove-btn">X</button></td>
+        `;
+        row.querySelector(".line-unit-input").value = data.unit || "adet";
+        bindRow(row);
+        recalcRow(row);
+        recalcSummary();
+        return row;
+    }
+
+    function bindRow(row) {
+        const productInput = row.querySelector(".product-label-input");
+        const stockIdInput = row.querySelector(".stock-id-input");
+        const unitInput = row.querySelector(".line-unit-input");
+        const priceInput = row.querySelector(".line-unit-price-input");
+        const qtyInput = row.querySelector(".line-quantity-input");
+        const removeButton = row.querySelector(".row-remove-btn");
+        const descriptionInput = row.querySelector('input[name="line_description"]');
+        const copyButton = row.querySelector(".row-copy-btn");
+        const duplicateButton = row.querySelector(".row-duplicate-btn");
+
+        productInput.addEventListener("change", function () {
+            const stock = catalogByLabel.get(productInput.value);
+            if (!stock) {
+                stockIdInput.value = "";
+                renderRowWarnings(row);
+                recalcSummary();
+                return;
+            }
+            stockIdInput.value = stock.id;
+            unitInput.value = stock.unit;
+            if (!priceInput.value || Number(priceInput.value) === 0) {
+                priceInput.value = stock.unit_price;
+            }
+            recalcRow(row);
+            renderRowWarnings(row);
+            recalcSummary();
+        });
+
+        [productInput, descriptionInput, unitInput, priceInput, qtyInput].forEach((field) => {
+            if (!field) {
+                return;
+            }
+            field.addEventListener("focus", function () {
+                setActiveRow(row);
+            });
+            field.addEventListener("click", function () {
+                setActiveRow(row);
+            });
+        });
+
+        unitInput.addEventListener("change", function () {
+            recalcRow(row);
+            renderRowWarnings(row);
+            recalcSummary();
+        });
+        priceInput.addEventListener("input", function () {
+            recalcRow(row);
+            renderRowWarnings(row);
+            recalcSummary();
+        });
+        qtyInput.addEventListener("input", function () {
+            recalcRow(row);
+            renderRowWarnings(row);
+            recalcSummary();
+        });
+        removeButton.addEventListener("click", function () {
+            setActiveRow(row);
+            pushOperationHistory();
+            if (body.querySelectorAll(".operation-row").length === 1) {
+                row.querySelectorAll("input").forEach((input) => {
+                    if (input.type === "hidden") {
+                        input.value = "";
+                    } else if (input.name === "line_quantity") {
+                        input.value = "1";
+                    } else if (input.name === "line_unit_price") {
+                        input.value = "0.00";
+                    } else {
+                        input.value = "";
+                    }
+                });
+                row.querySelector(".line-unit-input").value = "adet";
+                renderRowWarnings(row);
+            } else {
+                const rows = getRows();
+                const currentIndex = rows.indexOf(row);
+                const fallbackRow = rows[currentIndex + 1] || rows[currentIndex - 1] || null;
+                row.remove();
+                if (fallbackRow && fallbackRow.isConnected) {
+                    setActiveRow(fallbackRow);
+                } else {
+                    activeRow = null;
+                }
+            }
+            recalcSummary();
+        });
+
+        if (copyButton) {
+            copyButton.addEventListener("click", function () {
+                setActiveRow(row);
+                cloneRow(row, false);
+            });
+        }
+
+        if (duplicateButton) {
+            duplicateButton.addEventListener("click", function () {
+                setActiveRow(row);
+                cloneRow(row, true);
+            });
+        }
+
+        renderRowWarnings(row);
+    }
+
+    function recalcRow(row) {
+        const qty = Number(row.querySelector(".line-quantity-input").value || 0);
+        const price = Number(row.querySelector(".line-unit-price-input").value || 0);
+        const total = qty * price;
+        row.querySelector(".row-total").textContent = formatMoney(total);
+    }
+
+    function recalcSummary() {
+        const rows = Array.from(body.querySelectorAll(".operation-row"));
+        let productCount = 0;
+        let totalQuantity = 0;
+        let totalAmount = 0;
+
+        rows.forEach((row) => {
+            const stockId = row.querySelector(".stock-id-input").value;
+            const qty = Number(row.querySelector(".line-quantity-input").value || 0);
+            const price = Number(row.querySelector(".line-unit-price-input").value || 0);
+            if (stockId) {
+                productCount += 1;
+                totalQuantity += qty;
+                totalAmount += qty * price;
+            }
+            recalcRow(row);
+        });
+
+        lineCountEl.textContent = rows.length;
+        summaryLineCountEl.textContent = productCount;
+        summaryQuantityEl.textContent = totalQuantity;
+        summarySubtotalEl.textContent = formatMoney(totalAmount);
+        summaryGrandTotalEl.textContent = formatMoney(totalAmount);
+    }
+
+    function updateRowRepeatActionState() {
+        const disableRepeatActions = isReturnModeSelected();
+        getRows().forEach((row) => {
+            row.querySelectorAll(".row-copy-btn, .row-duplicate-btn").forEach((button) => {
+                button.disabled = disableRepeatActions;
+            });
+        });
+    }
+
+    function resetBulkPreview(message = "Henüz analiz yapılmadı.") {
+        bulkPreviewRows = [];
+        bulkPreviewList.innerHTML = "";
+        bulkPreviewSummary.textContent = message;
+    }
+
+    function updateBulkEntryModeState() {
+        const disableBulkEntry = isReturnModeSelected();
+        bulkText.readOnly = disableBulkEntry;
+        bulkPreviewButton.disabled = disableBulkEntry;
+        bulkApplyButton.disabled = disableBulkEntry;
+        if (bulkEntryBox) {
+            bulkEntryBox.classList.toggle("is-disabled", disableBulkEntry);
+        }
+        if (bulkModeHint) {
+            bulkModeHint.classList.toggle("is-warning", disableBulkEntry);
+            bulkModeHint.textContent = disableBulkEntry
+                ? "Toplu giriş parserı ilk sürümde yalnızca satış modunda açıktır. İade için fişten iade veya kısmi iade akışlarını kullan."
+                : "Metni alt alta yapıştır, önce önizle sonra sadece eşleşen satırları tabloya aktar.";
+        }
+        if (disableBulkEntry) {
+            resetBulkPreview("İade modunda toplu giriş parserı kapatılır.");
+        } else if (!bulkPreviewRows.length) {
+            resetBulkPreview();
+        }
+    }
+
+    function updateOperationMode() {
+        const selected = document.querySelector('input[name="operation_type"]:checked');
+        if (!selected) {
+            return;
+        }
+        if (selected.value === "return") {
+            submitButton.textContent = "İadeyi Kaydet";
+            submitButton.style.background = "#b85d10";
+        } else {
+            submitButton.textContent = "Satışı Kaydet";
+            submitButton.style.background = "#1f5fd6";
+        }
+        updateRowRepeatActionState();
+        updateBulkEntryModeState();
+        getRows().forEach((row) => renderRowWarnings(row));
+    }
+
+    function renderBulkPreview(data) {
+        bulkPreviewRows = data.rows || [];
+        bulkPreviewList.innerHTML = "";
+        const summary = data.summary || { total: 0, matched: 0, suggested: 0, unmatched: 0 };
+        bulkPreviewSummary.textContent = `${summary.total} satır | ${summary.matched} eşleşti | ${summary.suggested} öneri var | ${summary.unmatched} eşleşmedi`;
+
+        bulkPreviewRows.forEach((row, index) => {
+            const item = document.createElement("div");
+            item.className = `bulk-preview-item ${row.status}`;
+            const suggestionOptions = (row.suggestions || []).map((suggestion) => {
+                const selected = String(suggestion.stock_id) === String(row.matched_stock_id) ? "selected" : "";
+                return `<option value="${suggestion.stock_id}" data-label="${suggestion.label}" data-unit="${suggestion.unit}" data-price="${suggestion.unit_price}" ${selected}>${suggestion.label} (${suggestion.score})</option>`;
+            }).join("");
+
+            item.innerHTML = `
+                <div class="bulk-preview-top">
+                    <strong>${row.raw_line}</strong>
+                    <span class="bulk-status-badge ${row.status}">${row.message}</span>
+                </div>
+                <div class="bulk-preview-meta">Ayrıştırılan ürün: ${row.parsed_name || "-"}</div>
+                <div class="bulk-preview-meta">Miktar: ${row.quantity} | Birim: ${row.unit || "adet"} | Fiyat: ${row.unit_price}</div>
+                ${(row.suggestions || []).length ? `
+                    <div class="bulk-preview-meta" style="margin-top:8px;">Benzer ürün önerisi</div>
+                    <select class="bulk-suggestion-select" data-index="${index}">
+                        <option value="">Ürün seç</option>
+                        ${suggestionOptions}
+                    </select>
+                ` : ""}
+            `;
+            bulkPreviewList.appendChild(item);
+        });
+    }
+
+    function applyBulkRows() {
+        if (isReturnModeSelected() || !bulkPreviewRows.length) {
+            return;
+        }
+        pushOperationHistory();
+
+        const rowsToAdd = [];
+        bulkPreviewRows.forEach((row, index) => {
+            let target = null;
+            if (row.matched_stock_id) {
+                target = {
+                    stock_id: row.matched_stock_id,
+                    product_label: row.matched_label,
+                    unit: row.unit,
+                    unit_price: row.unit_price,
+                };
+            } else {
+                const select = bulkPreviewList.querySelector(`.bulk-suggestion-select[data-index="${index}"]`);
+                if (select && select.value) {
+                    const selected = select.options[select.selectedIndex];
+                    target = {
+                        stock_id: select.value,
+                        product_label: selected.dataset.label,
+                        unit: row.unit || selected.dataset.unit || "adet",
+                        unit_price: row.unit_price !== "0.00" ? row.unit_price : (selected.dataset.price || "0.00"),
+                    };
+                }
+            }
+
+            if (!target) {
+                return;
+            }
+
+            rowsToAdd.push({
+                stock_id: String(target.stock_id),
+                source_line_id: "",
+                product_label: target.product_label,
+                description: "",
+                quantity: String(row.quantity || 1),
+                unit: target.unit || "adet",
+                unit_price: target.unit_price || "0.00",
+            });
+        });
+
+        if (!rowsToAdd.length) {
+            return;
+        }
+
+        const existingRows = Array.from(body.querySelectorAll(".operation-row"));
+        if (existingRows.length === 1) {
+            const firstRow = existingRows[0];
+            const hasValue = firstRow.querySelector(".stock-id-input").value || firstRow.querySelector(".product-label-input").value;
+            if (!hasValue) {
+                body.innerHTML = "";
+            }
+        }
+
+        rowsToAdd.forEach((row) => body.appendChild(createRow(row)));
+        recalcSummary();
+        const lastRow = getRows().at(-1);
+        if (lastRow) {
+            setActiveRow(lastRow);
+            const quantityInput = lastRow.querySelector(".line-quantity-input");
+            if (quantityInput) {
+                quantityInput.focus();
+                quantityInput.select();
+            }
+        }
+    }
+
+    async function previewBulkEntry() {
+        if (isReturnModeSelected()) {
+            resetBulkPreview("İade modunda toplu giriş parserı kapatılır.");
+            return;
+        }
+        const text = (bulkText.value || "").trim();
+        if (!text) {
+            bulkPreviewRows = [];
+            bulkPreviewList.innerHTML = "";
+            bulkPreviewSummary.textContent = "Henüz analiz yapılmadı.";
+            return;
+        }
+
+        const response = await fetch("{% url 'operation_bulk_preview' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+                "X-CSRFToken": getCsrfToken(),
+            },
+            body: new URLSearchParams({
+                bulk_text: text,
+                operation_type: document.querySelector('input[name="operation_type"]:checked')?.value || "sale",
+            }).toString(),
+        });
+        const data = await response.json();
+        if (data.message && !(data.rows || []).length) {
+            resetBulkPreview(data.message);
+            return;
+        }
+        renderBulkPreview(data);
+    }
+
+    body.querySelectorAll(".operation-row").forEach((row) => {
+        bindRow(row);
+        recalcRow(row);
+    });
+    recalcSummary();
+    updateOperationMode();
+
+    document.querySelectorAll('input[name="operation_type"]').forEach((input) => {
+        input.addEventListener("change", updateOperationMode);
+    });
+
+    addRowButton.addEventListener("click", function () {
+        pushOperationHistory();
+        body.appendChild(createRow({}));
+    });
+
+    clearButton.addEventListener("click", function () {
+        clearOperationForm();
+    });
+
+    bulkPreviewButton.addEventListener("click", previewBulkEntry);
+    bulkApplyButton.addEventListener("click", applyBulkRows);
+    bulkClearButton.addEventListener("click", function () {
+        bulkText.value = "";
+        resetBulkPreview();
+    });
+
+    operationForm.addEventListener("keydown", function (event) {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+
+        if (event.key === "Enter" && target.closest(".operation-row")) {
+            if (target.tagName !== "TEXTAREA" && target.tagName !== "BUTTON") {
+                event.preventDefault();
+                focusNextField(target);
+            }
+            return;
+        }
+
+        if (event.key === "Delete" && target.closest(".operation-row")) {
+            const isTextLikeInput = target.tagName === "INPUT" && ["text", "number", "search"].includes((target.getAttribute("type") || "text").toLowerCase());
+            const hasValue = isTextLikeInput && typeof target.value === "string" && target.value !== "";
+            if (!hasValue) {
+                event.preventDefault();
+                removeActiveRow();
+            }
+        }
+    });
+
+    document.addEventListener("keydown", function (event) {
+        const target = event.target;
+        const isEditable = target instanceof HTMLElement && (
+            target.tagName === "TEXTAREA" ||
+            (target.tagName === "INPUT" && !["radio", "checkbox", "button", "submit"].includes((target.getAttribute("type") || "").toLowerCase()))
+        );
+
+        if (event.key === "F2") {
+            event.preventDefault();
+            if (!isFormDirty() || window.confirm("Mevcut işlem temizlenip yeni satış başlatılsın mı?")) {
+                clearOperationForm();
+            }
+            return;
+        }
+
+        if (event.key === "F3") {
+            event.preventDefault();
+            if (returnModeInput) {
+                returnModeInput.checked = true;
+                updateOperationMode();
+                if (!isEditable) {
+                    focusFirstProductInput();
+                }
+            }
+            return;
+        }
+
+        if (event.key === "F4") {
+            event.preventDefault();
+            focusFirstProductInput();
+            return;
+        }
+
+        if (event.key === "F5") {
+            event.preventDefault();
+            if (submitButton) {
+                submitButton.click();
+            }
+            return;
+        }
+
+        const wantsUndo = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z";
+        if (wantsUndo) {
+            if (isEditable) {
+                return;
+            }
+            event.preventDefault();
+            undoLastOperationAction();
+        }
+    });
+});
+</script>
+{% endblock %}

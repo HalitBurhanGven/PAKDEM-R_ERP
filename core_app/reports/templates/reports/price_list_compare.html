@@ -1,0 +1,162 @@
+﻿{% extends "base.html" %}
+{% block title %}Fiyat Listesi Karşılaştırma{% endblock %}
+
+{% block content %}
+<h1>Fiyat Listesi Karşılaştırma</h1>
+
+<div class="form-box" style="margin-bottom:12px;">
+  <form method="get">
+    <label>Eski Liste:</label>
+    <select name="base">
+      {% for pl in lists %}
+        <option value="{{ pl.id }}" {% if pl.id == base_id %}selected{% endif %}>
+          {{ pl.title }} (ID: {{ pl.id }})
+        </option>
+      {% endfor %}
+    </select>
+
+    <label style="margin-left:10px;">Yeni Liste:</label>
+    <select name="new">
+      {% for pl in lists %}
+        <option value="{{ pl.id }}" {% if pl.id == new_id %}selected{% endif %}>
+          {{ pl.title }} (ID: {{ pl.id }})
+        </option>
+      {% endfor %}
+    </select>
+
+    <button class="btn" type="submit" style="margin-left:10px;">Karşılaştır</button>
+  </form>
+</div>
+
+{% if summary %}
+  <div class="form-box" style="margin-bottom:12px;">
+    <b>Eski toplam:</b> {{ summary.base_total }} |
+    <b>Yeni toplam:</b> {{ summary.new_total }} |
+    <b>Fiyatı değişen:</b> {{ summary.changed }} |
+    <b>Grubu değişen:</b> {{ summary.moved }} |
+    <b>Eklenen:</b> {{ summary.added }} |
+    <b>Silinen:</b> {{ summary.removed }} |
+    <b>Belirsiz:</b> {{ summary.ambiguous }}
+  </div>
+
+  <h2>1) Fiyatı Değişenler</h2>
+  <table class="table">
+    <thead>
+  <tr>
+    <th>Ad</th>
+    <th>Eski gruplar</th>
+    <th>Yeni gruplar</th>
+    <th>Eski adet</th>
+    <th>Yeni adet</th>
+    <th>Not</th>
+    <th></th>
+  </tr>
+</thead>
+    <tbody>
+    {% for r in changed %}
+      <tr>
+  <td>{{ r.name }}</td>
+  <td>{{ r.base_groups }}</td>
+  <td>{{ r.new_groups }}</td>
+  <td>{{ r.base_count }}</td>
+  <td>{{ r.new_count }}</td>
+  <td>{{ r.note }}</td>
+  <td>
+    <a href="{% url 'reports:price_list_compare_detail' %}?base={{ base_id }}&new={{ new_id }}&name={{ r.name|urlencode }}">
+      Detay
+    </a>
+  </td>
+</tr>
+    {% empty %}
+      <tr><td colspan="6">Değişen yok</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>1B) Grubu Değişenler</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Ad</th>
+        <th>Eski Grup</th>
+        <th>Yeni Grup</th>
+        <th>Eski</th>
+        <th>Yeni</th>
+        <th>Fark</th>
+        <th>%</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in moved %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td>{{ r.old_group }}</td>
+        <td><b>{{ r.new_group }}</b></td>
+        <td>{{ r.old_price }}</td>
+        <td><b>{{ r.new_price }}</b></td>
+        <td>{{ r.delta }}</td>
+        <td>{% if r.pct is not None %}{{ r.pct|floatformat:2 }}{% else %}-{% endif %}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7">Yok</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>2) Yeni Eklenen Kalemler</h2>
+  <table class="table">
+    <thead><tr><th>Ad</th><th>Grup</th><th>Fiyat</th></tr></thead>
+    <tbody>
+    {% for r in added %}
+      <tr><td>{{ r.name }}</td><td>{{ r.group }}</td><td>{{ r.price }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">Yok</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>3) Listeden Çıkan Kalemler</h2>
+  <table class="table">
+    <thead><tr><th>Ad</th><th>Grup</th><th>Fiyat</th></tr></thead>
+    <tbody>
+    {% for r in removed %}
+      <tr><td>{{ r.name }}</td><td>{{ r.group }}</td><td>{{ r.price }}</td></tr>
+    {% empty %}
+      <tr><td colspan="3">Yok</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Belirsiz Eşleşmeler</h2>
+  <div class="form-box" style="margin-bottom:10px;">
+    <small>
+      Bu listede görünen isimler iki listede de var ama birden fazla satırla geçtiği için otomatik eşleştirme yapılmadı.
+      (Yanlış eşleştirme yapmamak için.)
+    </small>
+  </div>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Ad</th>
+        <th>Eski gruplar</th>
+        <th>Yeni gruplar</th>
+        <th>Not</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for r in ambiguous %}
+      <tr>
+        <td>{{ r.name }}</td>
+        <td>{{ r.base_groups }}</td>
+        <td>{{ r.new_groups }}</td>
+        <td>{{ r.note }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="4">Yok</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+{% endif %}
+
+{% endblock %}
+

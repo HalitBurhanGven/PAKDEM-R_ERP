@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Mevcut Kayıt Çakışması Açıklaması{% endblock %}
+
+{% block content %}
+<h1>Yeni Stok Kartı Oluşturulamadı</h1>
+
+<div class="form-box" style="margin-bottom:12px;">
+  <p><strong>Neden:</strong> {{ duplicate_explanation.duplicate_reason }}</p>
+  <p>
+    Çakışan mevcut stok:
+    <strong>#{{ duplicate_explanation.existing_stock.id }} - {{ duplicate_explanation.existing_stock.name }}</strong>
+  </p>
+</div>
+
+<div class="form-box" style="margin-bottom:12px;">
+  <h3>Taslak ve Mevcut Kayıt Karşılaştırması</h3>
+  <table style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr>
+        <th style="text-align:left; padding:8px;">Alan</th>
+        <th style="text-align:left; padding:8px;">Oluşturulmak İstenen</th>
+        <th style="text-align:left; padding:8px;">Mevcut Stok</th>
+        <th style="text-align:left; padding:8px;">Not</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in duplicate_explanation.rows %}
+      <tr>
+        <td style="padding:8px;">{{ row.label }}</td>
+        <td style="padding:8px;">{{ row.draft_value }}</td>
+        <td style="padding:8px;">{{ row.existing_value }}</td>
+        <td style="padding:8px;">{% if row.is_duplicate_key %}Çakışma kararında kullanıldı{% else %}Bilgi{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<div class="form-box">
+  <a class="btn" href="{% url 'stock_edit' duplicate_explanation.existing_stock.id %}">Mevcut Stok Kartını Aç</a>
+  <a class="btn" href="{% url 'stock_movement' duplicate_explanation.existing_stock.id %}">Mevcut Stok Hareketleri</a>
+  <a class="btn btn-danger" href="{% url 'reports:create_stock_from_price_match' price_item.id %}?{{ edit_query }}">Formu Düzenlemeye Geri Dön</a>
+</div>
+{% endblock %}

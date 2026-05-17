@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Raporlar{% endblock %}
+
+{% block content %}
+<h1>Raporlar</h1>
+
+<div class="form-box">
+    <p>Buradan raporlara ve yardimci araclara gidebilirsin:</p>
+
+    <ul>
+        <li>
+            <a href="{% url 'reports:movement_report' %}" style="text-decoration:none; font-weight:bold;">
+                Kategori Bazli Giris / Cikis Grafigi
+            </a>
+        </li>
+        <li style="margin-top:10px;">
+            <a href="{% url 'reports:export_stocks_xlsx' %}" style="text-decoration:none; font-weight:bold;">
+                Stoklari Excel indir
+            </a>
+        </li>
+        <li style="margin-top:10px;">
+            <a href="{% url 'reports:price_match_report' %}" style="text-decoration:none; font-weight:bold;">
+                Eksik Fiyat Eslesmeleri
+            </a>
+        </li>
+        <li style="margin-top:10px;">
+            <a href="{% url 'reports:duplicate_sku_report' %}" style="text-decoration:none; font-weight:bold;">
+                SKU Cakismalari
+            </a>
+        </li>
+        <li style="margin-top:10px;">
+            <a href="{% url 'reports:price_list_compare' %}" style="text-decoration:none; font-weight:bold;">
+                Fiyat Listesi Karsilastirma
+            </a>
+        </li>
+        <li style="margin-top:10px;">
+            <a href="{% url 'reports:profile_cut_optimizer' %}" style="text-decoration:none; font-weight:bold;">
+                Profil Kesim Planlama
+            </a>
+        </li>
+    </ul>
+</div>
+{% endblock %}

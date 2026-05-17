@@ -1,0 +1,24 @@
+﻿{% extends "base.html" %}
+{% block title %}{{ pl.title }}{% endblock %}
+{% block content %}
+<h1>{{ pl.title }}</h1>
+<p><b>Sheet:</b> {{ pl.sheet_name }} | <b>Tarih:</b> {{ pl.list_date|default:"-" }}</p>
+
+<table class="table">
+  <thead>
+    <tr><th>Grup</th><th>Ürün</th><th>Fiyat</th></tr>
+  </thead>
+  <tbody>
+    {% for i in items %}
+      <tr>
+        <td>{{ i.group|default:"-" }}</td>
+        <td>{{ i.name }}</td>
+        <td>{{ i.price }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="3">Kalem yok.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+

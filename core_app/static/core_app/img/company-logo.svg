@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-labelledby="title desc">
+  <title id="title">ERP Panel Logo</title>
+  <desc id="desc">Geometrik kırmızı ve lacivert işletme logosu</desc>
+  <rect width="160" height="160" rx="28" fill="#f6f8fb"/>
+  <path d="M32 118V42h31c22 0 36 9 36 28 0 17-13 28-34 28H49v20H32zm17-34h15c11 0 18-5 18-14 0-10-7-14-18-14H49v28z" fill="#8f1d1d"/>
+  <path d="M108 42h20l-23 38 23 38h-20L85 80l23-38z" fill="#18354f"/>
+</svg>

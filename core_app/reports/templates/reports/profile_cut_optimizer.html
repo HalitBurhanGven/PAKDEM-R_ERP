@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Profil Kesim Planlama{% endblock %}
+
+{% block content %}
+<h1>Profil Kesim Planlama</h1>
+
+<div class="planner-layout">
+<div class="planner-form-column">
+    <div class="form-box planner-form-box">
+        <p>
+            Bu surum, ayni standart boy icin birden fazla kesim talebini birlikte planlar.
+            Tek satir girersen sistem tek olculu kullanimda da ayni mantikla calisir.
+            Tum girisler santimetre (cm) cinsindendir.
+        </p>
+
+        <form method="post" id="cut-planner-form">
+            {% csrf_token %}
+            {{ line_formset.management_form }}
+
+            {% if form.non_field_errors %}
+                <div class="form-error">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            {% if line_formset.non_form_errors %}
+                <div class="form-error">{{ line_formset.non_form_errors }}</div>
+            {% endif %}
+
+            <div class="form-row" style="margin-bottom:16px;">
+                <div class="form-field">
+                    <label for="{{ form.standard_length.id_for_label }}">{{ form.standard_length.label }}</label>
+                    {{ form.standard_length }}
+                    {% if form.standard_length.errors %}
+                        <div class="field-error">{{ form.standard_length.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="cut-line-panel">
+                <div class="cut-line-header">
+                    <h2 style="margin:0;">Kesim Talepleri</h2>
+                    <button type="button" class="btn" id="add-cut-line">Satir Ekle</button>
+                </div>
+
+                <div id="cut-line-list">
+                    {% for line_form in line_formset %}
+                        <div class="cut-line-row" data-line-row>
+                            {% for hidden in line_form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+
+                            <div class="form-field cut-line-field">
+                                <label for="{{ line_form.cut_length.id_for_label }}">{{ line_form.cut_length.label }}</label>
+                                {{ line_form.cut_length }}
+                                {% if line_form.cut_length.errors %}
+                                    <div class="field-error">{{ line_form.cut_length.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="form-field cut-line-field">
+                                <label for="{{ line_form.requested_quantity.id_for_label }}">{{ line_form.requested_quantity.label }}</label>
+                                {{ line_form.requested_quantity }}
+                                {% if line_form.requested_quantity.errors %}
+                                    <div class="field-error">{{ line_form.requested_quantity.errors|join:", " }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="cut-line-actions">
+                                <label class="delete-toggle">
+                                    {{ line_form.DELETE }}
+                                    <span>Sil</span>
+                                </label>
+                                <button type="button" class="btn btn-danger cut-line-remove">Satiri Kaldir</button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div style="margin-top:16px;">
+                <button type="submit" class="btn">Kesim Planini Hesapla</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="planner-result-column">
+    <div class="sticky-results result-panel-shell">
+        {% if result %}
+        <div class="cutting-grid">
+            <div class="result-card">
+                <div class="result-label">Toplam gereken profil</div>
+                <div class="result-value">{{ result.total_stock_count }} adet</div>
+                <p>Girilen tum kesim talepleri icin gereken toplam standart boy profil sayisi.</p>
+            </div>
+            <div class="result-card">
+                <div class="result-label">Toplam fire</div>
+                <div class="result-value">{{ result.total_waste }} cm</div>
+                <p>Uretilen planin toplam fire miktari.</p>
+            </div>
+            <div class="result-card">
+                <div class="result-label">Toplam kesilen parca</div>
+                <div class="result-value">{{ result.total_cut_pieces }} adet</div>
+                <p>Planlanan toplam parca sayisi.</p>
+            </div>
+            <div class="result-card">
+                <div class="result-label">Fire orani</div>
+                <div class="result-value">%{{ result.waste_ratio|floatformat:2 }}</div>
+                <p>Toplam satin alinan profil boyuna gore hesaplanan fire orani.</p>
+            </div>
+        </div>
+
+        {% if result.single_request_summary %}
+            <div class="form-box">
+                <h2 style="margin-top:0;">Tek Olculu Ozet</h2>
+                <div class="summary-box">
+                    <p>Bir profilden {{ result.single_request_summary.pieces_per_stock }} adet parca cikar.</p>
+                    <p>Tam dolu her profilde {{ result.single_request_summary.waste_per_full_stock }} cm fire kalir.</p>
+                    <p>{{ result.single_request_summary.full_stock_count }} profil tam dolu kullanilir{% if result.single_request_summary.has_partial_stock %}, son profilde ise {{ result.single_request_summary.partial_stock_used_pieces }} adet kesim yapilir{% endif %}.</p>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="form-box">
+            <h2 style="margin-top:0;">Kesim Ozeti</h2>
+            <div class="summary-box">
+                <p>Toplam {{ result.total_stock_count }} adet {{ result.standard_length }} cm profil ile {{ result.total_requested_pieces }} adet talep karsilandi.</p>
+                <p>Kullanilan toplam boy {{ result.total_used_length }} cm, toplam fire ise {{ result.total_waste }} cm oldu.</p>
+                <p>Desenler, kalan talep icinden her profil icin en dolu kombinasyonu sececek sekilde olusturuldu.</p>
+            </div>
+        </div>
+
+        <div class="form-box">
+            <h2 style="margin-top:0;">Kesim Desenleri</h2>
+            <div class="pattern-list">
+                {% for pattern in result.pattern_usages %}
+                    <div class="pattern-card worker-pattern-card">
+                        <div class="pattern-card-top">
+                            <div>
+                                <div class="result-label">Desen {{ forloop.counter }}</div>
+                                <div class="worker-pattern-title">1 profilde sunlari kes:</div>
+                                <div class="pattern-subtitle">
+                                    {% for cut_length, piece_count in pattern.counts_by_length %}
+                                        {{ cut_length }} cm'den {{ piece_count }} adet{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="pattern-stock-count">{{ pattern.stock_count }} profil</div>
+                        </div>
+                        <div class="worker-steps">
+                            <div class="worker-step">
+                                <strong>Kes:</strong>
+                                {% for cut_length, piece_count in pattern.counts_by_length %}
+                                    {{ cut_length }} cm x {{ piece_count }}{% if not forloop.last %}, {% endif %}
+                                {% endfor %}
+                            </div>
+                            <div class="worker-step"><strong>Tekrar et:</strong> Bu deseni {{ pattern.stock_count }} profil boyunca ayni sekilde uygula.</div>
+                            <div class="worker-step"><strong>Kalan fire:</strong> Her profilde {{ pattern.waste }} cm</div>
+                        </div>
+                        <div class="pattern-meta">
+                            <span>Toplam parca: {{ pattern.cuts|length }} adet / profil</span>
+                            <span>Kullanilan boy: {{ pattern.used_length }} cm</span>
+                            <span>Profil basi fire: {{ pattern.waste }} cm</span>
+                        </div>
+                        <div class="pattern-breakdown">
+                            {% for cut_length, piece_count in pattern.counts_by_length %}
+                                <span class="pattern-chip">{{ cut_length }} cm x {{ piece_count }}</span>
+                            {% endfor %}
+                        </div>
+                        <details class="pattern-detail">
+                            <summary>Detayli toplama goster</summary>
+                            <div class="pattern-equation">{{ pattern.summary }}</div>
+                        </details>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="form-box results-placeholder">
+            <h2 style="margin-top:0;">Kesim Sonucu</h2>
+            <p>Hesaplama yaptiginda kesim ozeti ve uygulanacak desenler burada, formun hemen yaninda gorunecek.</p>
+            <p>Boy ve adetleri girip <strong>Kesim Planini Hesapla</strong> butonuna basman yeterli.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+</div>
+
+<template id="cut-line-empty-form">
+    <div class="cut-line-row" data-line-row>
+        {% for hidden in line_formset.empty_form.hidden_fields %}
+            {{ hidden }}
+        {% endfor %}
+
+        <div class="form-field cut-line-field">
+            <label for="{{ line_formset.empty_form.cut_length.id_for_label }}">{{ line_formset.empty_form.cut_length.label }}</label>
+            {{ line_formset.empty_form.cut_length }}
+        </div>
+
+        <div class="form-field cut-line-field">
+            <label for="{{ line_formset.empty_form.requested_quantity.id_for_label }}">{{ line_formset.empty_form.requested_quantity.label }}</label>
+            {{ line_formset.empty_form.requested_quantity }}
+        </div>
+
+        <div class="cut-line-actions">
+            <label class="delete-toggle">
+                {{ line_formset.empty_form.DELETE }}
+                <span>Sil</span>
+            </label>
+            <button type="button" class="btn btn-danger cut-line-remove">Satiri Kaldir</button>
+        </div>
+    </div>
+</template>
+
+<script>
+    (function () {
+        const addButton = document.getElementById("add-cut-line");
+        const list = document.getElementById("cut-line-list");
+        const totalFormsInput = document.getElementById("id_lines-TOTAL_FORMS");
+        const template = document.getElementById("cut-line-empty-form");
+
+        function bindRemoveButtons(scope) {
+            scope.querySelectorAll(".cut-line-remove").forEach(function (button) {
+                if (button.dataset.bound === "1") {
+                    return;
+                }
+                button.dataset.bound = "1";
+                button.addEventListener("click", function () {
+                    const row = button.closest("[data-line-row]");
+                    const deleteInput = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+                    if (deleteInput) {
+                        deleteInput.checked = true;
+                    }
+                    row.style.display = "none";
+                });
+            });
+        }
+
+        addButton.addEventListener("click", function () {
+            const formIndex = Number(totalFormsInput.value);
+            const html = template.innerHTML.replaceAll("__prefix__", String(formIndex));
+            const wrapper = document.createElement("div");
+            wrapper.innerHTML = html.trim();
+            const row = wrapper.firstElementChild;
+            list.appendChild(row);
+            totalFormsInput.value = String(formIndex + 1);
+            bindRemoveButtons(row);
+        });
+
+        bindRemoveButtons(document);
+    }());
+</script>
+{% endblock %}

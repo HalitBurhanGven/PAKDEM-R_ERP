@@ -1,0 +1,101 @@
+﻿{% extends "base.html" %}
+
+{% block title %}Excel ile Stok Yükle{% endblock %}
+
+{% block content %}
+<h1>Excel ile Stok Yükle</h1>
+
+<div class="form-box">
+  <p><b>Excel başlıkları</b> şu şekilde olmalı:</p>
+  <code>name, category, unit, sku, quantity</code>
+
+  <form method="post" enctype="multipart/form-data" style="margin-top:12px;">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit" name="action" value="preview">Önizleme</button>
+    <button class="btn" type="submit" name="action" value="import">Yükle</button>
+    <a class="btn btn-danger" style="text-decoration:none;" href="{% url 'reports:report_home' %}">Geri</a>
+  </form>
+</div>
+
+{% if preview %}
+  <div class="form-box" style="margin-top:16px;">
+    <h3>Önizleme Özeti</h3>
+    <p>
+      <b>Sheet:</b> {{ preview.sheet_name }} |
+      <b>Toplam satır:</b> {{ preview.total_rows }} |
+      <b>İşlenen:</b> {{ preview.processed_rows }} |
+      <b>Boş satır:</b> {{ preview.blank_rows }} |
+      <b>Geçerli:</b> {{ preview.valid_rows|length }} |
+      <b>Hata:</b> {{ preview.error_count }}
+    </p>
+    {% if preview.missing_headers %}
+      <p><b>Eksik başlıklar:</b> {{ preview.missing_headers|join:", " }}</p>
+    {% endif %}
+    {% if preview.extra_headers %}
+      <p><b>Beklenmeyen başlıklar:</b> {{ preview.extra_headers|join:", " }}</p>
+    {% endif %}
+    {% if preview.error_reasons %}
+      <p><b>Hata nedenleri:</b>
+        {% for reason, count in preview.error_reasons.items %}
+          {{ reason }} ({{ count }}){% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+    {% endif %}
+  </div>
+
+  {% if preview.invalid_rows %}
+    <div class="form-box" style="margin-top:12px;">
+      <h3>Geçersiz Satırlar (ilk 50)</h3>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Satır</th>
+            <th>Ad</th>
+            <th>Kategori</th>
+            <th>Birim</th>
+            <th>SKU</th>
+            <th>Miktar</th>
+            <th>Neden</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in preview.invalid_rows|slice:":50" %}
+            <tr>
+              <td>{{ r.row }}</td>
+              <td>{{ r.name }}</td>
+              <td>{{ r.category }}</td>
+              <td>{{ r.unit }}</td>
+              <td>{{ r.sku }}</td>
+              <td>{{ r.quantity }}</td>
+              <td>{{ r.reason }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% if import_result %}
+  <div class="form-box" style="margin-top:16px;">
+    <h3>İçe Aktarım Özeti</h3>
+    <p>
+      <b>Toplam satır:</b> {{ import_result.total }} |
+      <b>İşlenen:</b> {{ import_result.processed }} |
+      <b>Yeni:</b> {{ import_result.created }} |
+      <b>Güncellendi:</b> {{ import_result.updated }} |
+      <b>Atlandı:</b> {{ import_result.skipped }} |
+      <b>Hata:</b> {{ import_result.errors }}
+    </p>
+    {% if import_result.error_reasons %}
+      <p><b>Hata nedenleri:</b>
+        {% for reason, count in import_result.error_reasons.items %}
+          {{ reason }} ({{ count }}){% if not forloop.last %}, {% endif %}
+        {% endfor %}
+      </p>
+    {% endif %}
+  </div>
+{% endif %}
+{% endblock %}
+

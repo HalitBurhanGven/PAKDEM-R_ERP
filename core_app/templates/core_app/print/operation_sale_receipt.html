@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ print_title }} | {{ transaction.display_number }}</title>
+    <link rel="stylesheet" href="{% static 'core_app/css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'core_app/css/operation_print.css' %}">
+</head>
+<body class="print-page">
+    <div class="print-toolbar screen-only">
+        <button type="button" class="btn" onclick="window.print()">Yazdır</button>
+        <a href="{% url 'operation_detail' transaction.id %}" class="btn print-secondary">Fiş Detayına Dön</a>
+    </div>
+
+    <main class="print-sheet receipt-sheet">
+        {% include "core_app/print/partials/operation_print_header.html" %}
+
+        <section class="print-card print-grid">
+            <div>
+                <div class="print-meta-row"><span>Fiş No</span><strong>{{ transaction.display_number }}</strong></div>
+                <div class="print-meta-row"><span>Tarih / Saat</span><strong>{{ transaction.created_at|date:"d.m.Y H:i" }}</strong></div>
+                <div class="print-meta-row"><span>İşlem Tipi</span><strong>{{ transaction.get_operation_type_display }}</strong></div>
+                <div class="print-meta-row"><span>Toplam Kalem</span><strong>{{ line_count }}</strong></div>
+            </div>
+            <div>
+                <div class="print-meta-row"><span>Müşteri Adı</span><strong>{{ transaction.customer_name|default:"-" }}</strong></div>
+                <div class="print-meta-row"><span>Telefon</span><strong>{{ transaction.phone|default:"-" }}</strong></div>
+                <div class="print-meta-row"><span>Ödeme Tipi</span><strong>{% if transaction.payment_type %}{{ transaction.get_payment_type_display }}{% else %}-{% endif %}</strong></div>
+                <div class="print-meta-row"><span>Teslim Alan</span><strong>{{ transaction.recipient_name|default:"-" }}</strong></div>
+                <div class="print-meta-row"><span>Araç / Plaka</span><strong>{{ transaction.vehicle_plate|default:"-" }}</strong></div>
+            </div>
+        </section>
+
+        <section class="print-card note-card">
+            <h3 class="print-section-title">Genel Not</h3>
+            <p>{{ transaction.note|default:"-" }}</p>
+        </section>
+
+        {% include "core_app/print/partials/operation_line_table.html" %}
+
+        <section class="print-card totals-card">
+            <div class="print-meta-row"><span>Toplam Adet</span><strong>{{ transaction.total_quantity }}</strong></div>
+            <div class="print-meta-row total-emphasis"><span>Genel Toplam</span><strong>{{ transaction.total_amount|floatformat:2 }} ₺</strong></div>
+        </section>
+    </main>
+</body>
+</html>

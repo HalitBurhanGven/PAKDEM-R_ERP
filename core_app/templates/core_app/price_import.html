@@ -1,0 +1,49 @@
+﻿{% extends "base.html" %}
+{% block title %}Fiyat Listesi Yükle{% endblock %}
+{% block content %}
+<h1>Fiyat Listesi Yükle</h1>
+
+<div class="form-box">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn" type="submit" name="action" value="preview">Önizleme</button>
+    <button class="btn" type="submit" name="action" value="import">Yükle</button>
+  </form>
+  <p style="margin-top:10px;">
+    Sheet örnekleri: <b>HIRDAVAT</b>, <b>SACLAR</b>, <b>TOSÇELİK</b> ...
+  </p>
+</div>
+
+{% if preview %}
+  <div class="form-box" style="margin-top:16px;">
+    <h3>Önizleme Özeti</h3>
+    <p>
+      <b>Sheet:</b> {{ preview.sheet_name }} |
+      <b>Tarih:</b> {{ preview.list_date|default:"-" }} |
+      <b>Kalem:</b> {{ preview.item_count }}
+    </p>
+  </div>
+
+  <div class="form-box" style="margin-top:12px;">
+    <h3>Örnek Kalemler (ilk 50)</h3>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Grup</th>
+          <th>Ad</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in preview.sample_items %}
+          <tr>
+            <td>{{ item.group }}</td>
+            <td>{{ item.name }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+{% endblock %}
+

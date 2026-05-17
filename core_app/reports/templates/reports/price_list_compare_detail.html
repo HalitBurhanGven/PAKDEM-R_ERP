@@ -1,0 +1,55 @@
+﻿{% extends "base.html" %}
+{% block title %}Karşılaştırma Detayı{% endblock %}
+
+{% block content %}
+<h1>Karşılaştırma Detayı</h1>
+
+<div class="form-box" style="margin-bottom:12px;">
+  <b>Ürün Adı:</b> {{ name }}<br>
+  <b>Eski Liste:</b> {{ base_list.title }} (ID: {{ base_id }})<br>
+  <b>Yeni Liste:</b> {{ new_list.title }} (ID: {{ new_id }})<br><br>
+
+  <a class="btn" href="{% url 'reports:price_list_compare' %}?base={{ base_id }}&new={{ new_id }}">Karşılaştırmaya dön</a>
+</div>
+
+<div class="form-box" style="margin-bottom:12px;">
+  <b>Eski listede adet:</b> {{ base_count }} |
+  <b>Yeni listede adet:</b> {{ new_count }}
+</div>
+
+<h2>Eski Liste Satırları</h2>
+<table class="table">
+  <thead><tr><th>ID</th><th>Ad</th><th>Grup</th><th>Fiyat</th></tr></thead>
+  <tbody>
+  {% for r in base_items %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.name }}</td>
+      <td>{{ r.group }}</td>
+      <td>{{ r.price }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4">Yok</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Yeni Liste Satırları</h2>
+<table class="table">
+  <thead><tr><th>ID</th><th>Ad</th><th>Grup</th><th>Fiyat</th></tr></thead>
+  <tbody>
+  {% for r in new_items %}
+    <tr>
+      <td>{{ r.id }}</td>
+      <td>{{ r.name }}</td>
+      <td>{{ r.group }}</td>
+      <td>{{ r.price }}</td>
+    </tr>
+  {% empty %}
+    <tr><td colspan="4">Yok</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+{% endblock %}
+
