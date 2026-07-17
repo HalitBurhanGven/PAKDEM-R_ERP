@@ -2,6 +2,10 @@ venv/
 __pycache__/
 *.py[cod]
 *.sqlite3
+db.sqlite3.backup
+sqlite_data.json
+sqlite_data.original.json
+sqlite_data_utf8.json
 .env
 .env.*
 .venv/
